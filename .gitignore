@@ -1,0 +1,7 @@
+.cache/
+include/glad/
+src/glad.c
+lib/glfw3.lib
+include/GLFW/
+include/glm/
+include/KHR/
