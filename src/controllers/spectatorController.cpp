@@ -1,6 +1,7 @@
 #include <GLFW/glfw3.h>
 #include <bane/controllers/spectatorController.hpp>
 #include <bane/components/camera.hpp>
+#include <iostream>
 
 SpectatorController::SpectatorController(Camera* cam)
 {

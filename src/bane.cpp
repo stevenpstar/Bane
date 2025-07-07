@@ -3,7 +3,7 @@
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <stdexcept>
+#include <stbimage/stb_image.h>
 #include <array>
 
 void Print(std::string message)
@@ -16,8 +16,29 @@ void framebuffer_size_callback(__attribute__((unused)) GLFWwindow* window, int w
   glViewport(0, 0, width, height);
 }
 
+void SetCursorCallback(GLFWwindow* window, void(*f)(GLFWwindow* window, double xpos, double ypos))
+{
+  glfwSetCursorPosCallback(window, f);
+}
+
+void SetResizeCallback(GLFWwindow *window, void (*f)(GLFWwindow *, int, int))
+{
+  glfwSetFramebufferSizeCallback(window, f);
+}
+
+void ResizeViewport(int width, int height)
+{
+  glViewport(0, 0, width, height);
+}
+
+void CaptureMouse(GLFWwindow* window)
+{
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+
 GLFWwindow* CreateWindow()
 {
+  std::cout << "Trying to create window!\n";
   glfwInit();
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -32,6 +53,7 @@ GLFWwindow* CreateWindow()
   }
   glfwMakeContextCurrent(window);
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+ // stbi_set_flip_vertically_on_load(true);
 
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
   {
@@ -40,6 +62,7 @@ GLFWwindow* CreateWindow()
   }
 
   glViewport(0, 0, 800, 600);
+  glEnable(GL_DEPTH_TEST);
 
   // some setup, should be moved to own function(s)
   unsigned int VAO, VBO, EBO;
@@ -60,8 +83,8 @@ void Poll()
 
 void ClearColour()
 {
-  glClearColor(0.f, 0.f, 0.f, 1.f);
-  glClear(GL_COLOR_BUFFER_BIT);
+  glClearColor(1.f, 1.f, 1.f, 1.f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void SwapBuffer(GLFWwindow* window)

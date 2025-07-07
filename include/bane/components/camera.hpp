@@ -7,9 +7,11 @@ class Camera
     Camera(glm::vec3 position);
     glm::mat4 lookAtTarget(glm::vec3 target);
     glm::mat4 getTransform();
+    glm::mat4 projection;
 
     void setPosition(glm::vec3 position);
     void setCameraDirection(glm::vec3 dir);
+    void setProjection(int width, int height, float fov);
     glm::vec3 getPosition();
     glm::vec3 getDirection();
     glm::vec3 getCameraUp();

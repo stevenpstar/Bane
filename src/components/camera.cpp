@@ -1,3 +1,5 @@
+#include "glm/ext/matrix_clip_space.hpp"
+#include "glm/trigonometric.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <bane/components/camera.hpp>
@@ -13,6 +15,12 @@ Camera::Camera(glm::vec3 position)
   up = glm::vec3(0.f, 1.f, 0.f);
   cameraRight = glm::normalize(glm::cross(up, cameraDirection));
   cameraUp = glm::cross(cameraDirection, cameraRight);
+  projection = glm::perspective(
+      glm::radians(90.f),
+      800.f / 600.f,
+      0.1f,
+      100.f
+      );
 }
 
 glm::mat4 Camera::lookAtTarget(glm::vec3 target)
@@ -42,7 +50,16 @@ void Camera::setCameraDirection(glm::vec3 dir)
   cameraDirection = dir;
   cameraRight = glm::normalize(glm::cross(up, cameraDirection));
   cameraUp = glm::cross(cameraDirection, cameraRight);
+}
 
+void Camera::setProjection(int width, int height, float fov)
+{
+  projection = glm::perspective(
+      glm::radians(fov),
+      (float)width / (float)height,
+      0.1f,
+      100.f
+      );
 }
 
 glm::vec3 Camera::getPosition()

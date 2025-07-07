@@ -6,9 +6,14 @@ add_library(${PROJECT_NAME}
   src/controllers/icontroller.cpp
   src/controllers/spectatorController.cpp
   src/components/camera.cpp
+  src/components/bobject.cpp
+  src/components/staticmesh.cpp
   src/utility/shader.cpp
   src/primitives/primitives.cpp
+  src/primitives/mesh.cpp
+  src/primitives/model.cpp
   src/glad.c
+  src/stb_image.c
   )
 
 target_include_directories(${PROJECT_NAME}
@@ -19,10 +24,12 @@ target_include_directories(${PROJECT_NAME}
 target_link_directories(${PROJECT_NAME}
   PUBLIC
   ${PROJECT_SOURCE_DIR}/lib
+  ${PROJECT_SOURCE_DIR}/build
 )
 
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
   glfw3
+  assimp-vc143-mt
 )
 
