@@ -26,7 +26,7 @@ uniform Material material;
 
 void main()
 {
-  FragColour = mix(texture(material.texture_diffuse1, texCoords), texture(material.texture_diffuse2, texCoords), 1.0);
+  FragColour = texture(material.texture_diffuse1, texCoords);
   //  FragColour = vec4(0.f, 0.f, 0.f, 1.0);
 }
 )";

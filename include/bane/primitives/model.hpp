@@ -12,12 +12,14 @@ struct aiNode;
 struct aiScene;
 struct aiMaterial;
 enum aiTextureType;
+
 class Model
 {
   public:
     Model(const char *path);
     glm::vec3 position;
     void Render(Shader &shader, Camera* cam);
+   
   private:
     std::vector<Mesh> meshes;
     std::string directory;

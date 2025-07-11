@@ -5,9 +5,9 @@
 struct GLFWwindow;
 
 void Print(std::string message);
-
 GLFWwindow* CreateWindow();
 bool ShouldClose(GLFWwindow* window);
+float GetTime();
 void Poll();
 void ClearColour();
 void SwapBuffer(GLFWwindow* window);

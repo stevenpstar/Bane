@@ -5,3 +5,4 @@ lib/glfw3.lib
 include/GLFW/
 include/glm/
 include/KHR/
+include/assimp/

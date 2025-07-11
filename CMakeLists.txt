@@ -12,6 +12,7 @@ add_library(${PROJECT_NAME}
   src/primitives/primitives.cpp
   src/primitives/mesh.cpp
   src/primitives/model.cpp
+  src/primitives/animatedModel.cpp
   src/glad.c
   src/stb_image.c
   )

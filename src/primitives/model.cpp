@@ -60,6 +60,28 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;
 
+  // Testing loading bonesssss
+  for (unsigned int i = 0; i < mesh->mNumBones; i++)
+  {
+    std::cout << mesh->mBones[i]->mName.C_Str() << "\n";
+    for (unsigned int j = 0; j < mesh->mBones[i]->mNumWeights; ++j)
+    {
+      std::cout << "Vertex Id: " << mesh->mBones[i]->mWeights[j].mVertexId << "\n";
+    }
+  }
+
+  for (unsigned int i = 0; i < scene->mNumAnimations; ++i)
+  {
+    std::cout << scene->mAnimations[i]->mName.C_Str() << "\n";
+    for (unsigned int j = 0; j < scene->mAnimations[i]->mNumChannels; ++j)
+    {
+      for (unsigned int m = 0; m < scene->mAnimations[i]->mChannels[j]->mNumRotationKeys; ++m)
+      {
+        std::cout << scene->mAnimations[i]->mChannels[j]->mRotationKeys[m].mTime << "\n";
+      }
+    }
+  }
+
   for (unsigned int i = 0; i < mesh->mNumVertices; i++)
   {
     Vertex vertex;

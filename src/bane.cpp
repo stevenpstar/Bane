@@ -72,8 +72,12 @@ GLFWwindow* CreateWindow()
 
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-
   return window;
+}
+
+float GetTime()
+{
+  return glfwGetTime();
 }
 
 void Poll()
