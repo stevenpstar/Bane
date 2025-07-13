@@ -8,27 +8,42 @@ layout (location = 4) in vec4 weights;
 
 out vec3 position;
 out vec2 texCoords;
+out vec4 weightColour;
 
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-const int MAX_BONES = 2;
+const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
 
-uniform mat4 finalBonesMatrices[2];
+uniform mat4 finalBonesMatrices[100];
 
 void main()
 {
-  mat4 totalPosition = finalBonesMatrices[boneIds[0]] * weights[0];
-  totalPosition += finalBonesMatrices[boneIds[1]] * weights[1];
-  totalPosition += finalBonesMatrices[boneIds[2]] * weights[2];
-  totalPosition += finalBonesMatrices[boneIds[3]] * weights[3];
-  vec4 posL = totalPosition * vec4(aPos, 1.0);
-  gl_Position = projection * view * model * posL;//vec4(aPos, 1.0);
+// this is scuuuuufffed
+  vec4 totalPosition = vec4(0.0);
+  for (int i = 0; i < MAX_BONE_INFLUENCE; i++)
+  {
+    if (boneIds[i] == -1)
+      continue;
+
+    if (boneIds[i] >= MAX_BONES)
+    {
+      totalPosition = vec4(aPos, 1.0);
+      break;
+    }
+
+    vec4 localPos = finalBonesMatrices[boneIds[i]] * vec4(aPos, 1.0);
+    totalPosition += localPos * weights[i];
+  }
+   // vec4 posL = totalPosition * vec4(aPos, 1.0);
+  gl_Position = projection * view * model * totalPosition;//vec4(aPos, 1.0);
   //gl_Position = projection * view * model * vec4(aPos, 1.0);
  // position = gl_Position.xyz;
   texCoords = aTexCoords;
+  //vec4 c = vec4(1.0);
+ // weightColour = totalPosition * c;
 }
 
 )";

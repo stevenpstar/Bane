@@ -1,5 +1,6 @@
 #ifndef BANE_VERTEX
 #define BANE_VERTEX
+#include <array>
 #define MAX_BONE_INFLUENCE 4
 #include <glm/glm.hpp>
 struct Vertex {
@@ -7,7 +8,7 @@ struct Vertex {
   glm::vec3 Normal;
   glm::vec2 TexCoords;
 
-  int BoneIds[MAX_BONE_INFLUENCE];
-  float Weights[MAX_BONE_INFLUENCE];
+  std::array<int, 4> BoneIds;
+  std::array<float, 4> Weights;
 };
 #endif

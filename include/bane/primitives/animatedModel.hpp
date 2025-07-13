@@ -4,6 +4,7 @@
 #include <array>
 #include <glm/fwd.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <map>
 #include <string>
 #include <vector>
 #include <bane/primitives/mesh.hpp>
@@ -24,17 +25,34 @@ struct RotationKeyFrame
 
 struct PositionKeyFrame
 {
-  glm::mat4 pos;
+  glm::vec3 pos;
   float timeStamp;
 };
 
 struct ScaleKeyFrame
 {
-  glm::mat4 scale;
+  glm::vec3 scale;
   float timeStamp;
 };
 
-struct Bone2
+struct AnimationMetaData
+{
+  float AnimDuration;
+  int ticksPerSecond;
+};
+
+struct Animation
+{
+  int AnimID;
+  std::string AnimName; // maybe not needed here
+  float AnimDuration; // maybe not needed here
+  int ticksPerSecond;
+  std::vector<RotationKeyFrame> rotKeyFrames;
+  std::vector<PositionKeyFrame> posKeyFrames;
+  std::vector<ScaleKeyFrame> scaleKeyFrames;
+};
+
+struct Bone
 {
   int ID;
   std::string Name;
@@ -42,25 +60,9 @@ struct Bone2
   glm::mat4 AnimTransform;
   glm::mat4 LocalTransform;
   glm::mat4 InvTransform;
-  std::vector<Bone2> Children;
+  std::vector<Bone*> Children;
+  std::vector<Animation> AnimationData;
 };
-
-struct Bone
-{
-  int ID;
-  std::string Name;
-  glm::mat4 offset;
-  std::vector<RotationKeyFrame> rotKeyFrames;
-  std::vector<PositionKeyFrame> posKeyFrames;
-  std::vector<ScaleKeyFrame> scaleKeyFrames;
-};
-
-struct Animation
-{
-  std::string name;
-  std::vector<Bone> bones;
-};
-
 
 class AnimatedModel
 {
@@ -68,28 +70,40 @@ class AnimatedModel
     AnimatedModel(const char *path);
     glm::vec3 position;
     void Render(Shader &shader, Camera* cam);
-    void SetBoneMatricesUnif(glm::mat4 matrix, Shader* shader, int index);
-    void getRotFromFrame(glm::mat4& rot, unsigned int frameIndex, unsigned int bone);
-    void getPosFromFrame(glm::mat4& pos, unsigned int frameIndex, unsigned int bone);
-    void getScaleFromFrame(glm::mat4& scale, unsigned int frameIndex, unsigned int bone);
-    aiNode* GetParentBone(std::string name);
-    glm::mat4 GetTransformAtFrame(Bone* bone, unsigned int frameIndex);
-    void calcInverseTransform(Bone2* bone, glm::mat4 parentTransform);
-    std::array<glm::mat4, 2> boneMatrices;
-    std::vector<Animation> anim;
-    std::vector<glm::mat4> getTransformsAtTime(std::string animationName, float animTime); 
+    void SetBoneMatricesUnif(Shader* shader);
+    void calcInverseTransform(Bone* bone, glm::mat4 parentTransform);
+    // maybe by name instead but this works for now
+    void PlayAnimation(int animIndex);
+    void StopAnimation();
+    bool IsPlayingAnimation();
+    void UpdateAnimation(float dt);
+    void calcAnimTransform(Bone* bone, glm::mat4 transform);
+    std::array<glm::mat4, 100> boneMatrices;
   private:
-    const aiScene* ModelScene;
+    Bone* rootBone = nullptr;
+    glm::mat4 globalInverseMat4;
+    int currentAnimationIndex = -1;
+    std::map<unsigned int, Bone> boneMap;
+    std::map<std::string, unsigned int> namedBoneMap;
+    std::map<unsigned int, AnimationMetaData> animationMap;
     std::vector<Mesh> meshes;
     std::string directory;
+    float animTime = 0.f;
     std::vector<Texture> textures_loaded;
     void loadAnimatedModel(std::string path);
-
     void processNode(aiNode* node, const aiScene *scene);
     Mesh processMesh(aiMesh* mesh, const aiScene *scene);
-
     void processBones(std::vector<Vertex>& vertices,
-        aiMesh* mesh, const aiScene* scene);
+        aiMesh* mesh, const aiScene* scene, aiNode* node);
+    void createHierarchy(aiMesh* mesh, aiNode* node, const aiScene* scene);
+    void addAnimationData(const aiScene* scene);
+    float getInterpDelta(float prevFrameTime, float nextFrameTime);
+    int getCurrentPosFrameIndex(Bone* bone);
+    int getCurrentRotFrameIndex(Bone* bone);
+    int getCurrentScaleFrameIndex(Bone* bone);
+    glm::mat4 interpPos(Bone* bone);
+    glm::mat4 interpRot(Bone* bone);
+    glm::mat4 interpScale(Bone* bone);
     std::vector<Texture> loadMaterialTextures(
         aiMaterial* mat, 
         aiTextureType type,

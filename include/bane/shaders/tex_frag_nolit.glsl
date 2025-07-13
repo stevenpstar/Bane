@@ -10,6 +10,7 @@ uniform vec3 viewPos;
 in vec3 Normal;
 in vec3 FragPos;
 in vec2 texCoords;
+in vec4 weightColour;
 
 struct Material {
   sampler2D texture_diffuse1;
@@ -27,6 +28,7 @@ uniform Material material;
 void main()
 {
   FragColour = texture(material.texture_diffuse1, texCoords);
-  //  FragColour = vec4(0.f, 0.f, 0.f, 1.0);
+  // FragColour = vec4(0.f, 0.f, 0.f, 1.0);
+  //FragColour = weightColour;
 }
 )";
