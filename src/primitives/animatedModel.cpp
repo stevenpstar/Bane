@@ -1,5 +1,8 @@
+#include "bane/utility/boneRotation.hpp"
 #include "glm/common.hpp"
+#include "glm/ext/matrix_transform.hpp"
 #include "glm/matrix.hpp"
+#include "glm/trigonometric.hpp"
 #include <glm/fwd.hpp>
 #include <bane/primitives/assimpglmhelpers.hpp>
 #include <string>
@@ -26,8 +29,14 @@
 
 unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma = false);
 
-AnimatedModel::AnimatedModel(const char* path)
+AnimatedModel::AnimatedModel(const char* path, glm::vec3 pos)
 {
+  position = pos;
+  modelTarget = glm::vec3(pos.x, pos.y, pos.z - 3.f);
+  modelDir = glm::normalize(pos - modelTarget);
+  modelUp = glm::vec3(0.f, 1.f, 0.f);
+  modelRight = glm::normalize(glm::cross(modelUp, modelDir));
+
   for (int i = 0; i < 100; ++i)
   {
     boneMatrices[i] = glm::mat4(1.f);
@@ -50,7 +59,7 @@ void AnimatedModel::loadAnimatedModel(std::string path)
   glm::mat4 rootTransform = AssimpGLMHelpers::ConvertMatrixToGLMFormat(scene->mRootNode->mTransformation);
   globalInverseMat4 = glm::inverse(rootTransform);
   directory = path.substr(0, path.find_last_of('/'));
-  std::cout << "AnimatedModel found in directory: " << directory << std::endl;
+  //std::cout << "AnimatedModel found in directory: " << directory << std::endl;
   processNode(scene->mRootNode, scene);
   addAnimationData(scene);
   meshes[meshes.size()-1].setupMesh();
@@ -232,6 +241,7 @@ void AnimatedModel::addAnimationData(const aiScene* scene)
       animMD.AnimDuration = scene->mAnimations[a]->mDuration;
       animMD.ticksPerSecond = scene->mAnimations[a]->mTicksPerSecond;
       animationMap[animID] = animMD;
+      //std::cout << "Adding animation: " << animName << ", ID: " << animID << "\n";
       if (animID == 0)
       {
       }
@@ -359,11 +369,16 @@ unsigned int TextureFromFile(const char *path, const std::string &directory, boo
     return textureID;
 }
 
-void AnimatedModel::Render(Shader &shader, Camera* camera)
+void AnimatedModel::Render(glm::vec3 pos, Shader* shader, Camera* camera)
 {
+  glm::mat4 model = glm::mat4(1.f);
+  model = glm::translate(model, position);
+  model = model * rotation;
+  glm::mat4 rot = glm::lookAt(position, modelDir, modelUp);
+  //model = model * rot;
   for (unsigned int i = 0; i < meshes.size(); i++)
   {
-    meshes[i].Render(shader, camera);
+    meshes[i].Render(model, shader, camera);
   }
 }
 
@@ -389,11 +404,20 @@ void AnimatedModel::UpdateAnimation(float dt)
 {
   if (currentAnimationIndex == -1)
   {
+    animTime = 0.f;
     // No animation is playing, early return
     return;
   }
 
   this->animTime += animationMap[currentAnimationIndex].ticksPerSecond * dt;
+  if (this->animTime >= animationMap[currentAnimationIndex].AnimDuration)
+  {
+    if (!looping)
+    {
+      currentAnimationIndex = -1;
+      return;
+    }
+  }
   //this->animTime += 12 * dt;
   if (!animationMap.count(currentAnimationIndex))
   {
@@ -411,6 +435,15 @@ void AnimatedModel::calcAnimTransform(Bone* bone, glm::mat4 transform)
   glm::mat4 translation = interpPos(bone);
   glm::mat4 rotation = interpRot(bone);
   glm::mat4 scale = interpScale(bone);
+  for (BoneRotation boneRot : boneRotations)
+  {
+    if (bone->Name == boneRot.BoneName)
+    {
+      glm::mat4 addRot = glm::mat4(1.f);
+      addRot = glm::rotate(addRot, glm::radians(boneRot.Angle), boneRot.Axis);
+      rotation *= addRot;
+    }
+  }
   glm::mat4 interpedTransform = translation * rotation * scale;
   glm::mat4 globalTransform = transform * interpedTransform;
   if (bone->ID >= boneMatrices.size())

@@ -1,7 +1,8 @@
+#include <bane/utility/ray.hpp>
 #include <GLFW/glfw3.h>
 #include <bane/controllers/spectatorController.hpp>
 #include <bane/components/camera.hpp>
-#include <iostream>
+#include <bane/components/character.hpp>
 
 SpectatorController::SpectatorController(Camera* cam)
 {
@@ -38,6 +39,11 @@ void SpectatorController::processInput(__attribute__((unused)) GLFWwindow* windo
   {
     rightDown = false;
   }
+}
+
+void SpectatorController::processMouseInput(GLFWwindow*, int button, int action, int mods)
+{
+
 }
 
 void SpectatorController::processMouse(GLFWwindow*, double xpos, double ypos)
@@ -82,6 +88,21 @@ void SpectatorController::processMouse(GLFWwindow*, double xpos, double ypos)
   dir.y = sin(glm::radians(pitch));
   dir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
   camera->setCameraDirection(glm::normalize(dir));
+
+
+  if (character) {
+    //glm::vec3 rayDir = getRayFromMouse(camera, GLOBAL_WIDTH, GLOBAL_HEIGHT, xpos, ypos);
+    //glm::vec3 hitPoint = glm::vec3(0.f, 0.f, 0.f);
+    //if (rayWithAABB(character->collisionBox, ))
+    //{
+    //  character->model.position = hitPoint;
+    //}
+
+    if (character->model.currentAnimationIndex != 36)
+    {
+      character->model.PlayAnimation(36);
+    }
+  }
 }
 
 void SpectatorController::update(float deltaTime)
@@ -95,7 +116,6 @@ void SpectatorController::update(float deltaTime)
   if (backDown) {
     forward -= 1.f;
   }
-
   if (leftDown) {
     left += 1.f;
   } 
@@ -107,6 +127,7 @@ void SpectatorController::update(float deltaTime)
   moveVector += camera->getCameraRight() * left;
   camera->setPosition(camera->getPosition() + moveVector * cameraSpeed * deltaTime);
   camera->lookAtTarget(camera->getPosition() + camera->getDirection());
+  //camera->lookAtTarget(glm::vec3(0.f, 0.f, 0.f));
 }
 
 void SpectatorController::Enable()

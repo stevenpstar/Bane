@@ -16,9 +16,9 @@ Camera::Camera(glm::vec3 position)
   cameraRight = glm::normalize(glm::cross(up, cameraDirection));
   cameraUp = glm::cross(cameraDirection, cameraRight);
   projection = glm::perspective(
-      glm::radians(90.f),
+      glm::radians(60.f),
       800.f / 600.f,
-      0.1f,
+      -1.0f,
       100.f
       );
 }
@@ -60,6 +60,8 @@ void Camera::setProjection(int width, int height, float fov)
       0.1f,
       100.f
       );
+//    float aspect = (float)width/height;
+//    projection = glm::ortho(-aspect, aspect, -1.f, 1.f, 0.1f, 400.f);
 }
 
 glm::vec3 Camera::getPosition()

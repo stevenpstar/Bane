@@ -1,6 +1,7 @@
 #ifndef BANE_ANIMATED_MODEL
 #define BANE_ANIMATED_MODEL
 #include "assimp/mesh.h"
+#include "bane/utility/boneRotation.hpp"
 #include <array>
 #include <glm/fwd.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -67,22 +68,39 @@ struct Bone
 class AnimatedModel
 {
   public:
-    AnimatedModel(const char *path);
+    AnimatedModel(const char *path, glm::vec3 pos);
     glm::vec3 position;
-    void Render(Shader &shader, Camera* cam);
+    glm::mat4 rotation = glm::mat4(1.f);
+    // TEST VARIABLE
+    float torsoTilt = 0.f;
+    bool looping = true;
+
+    // The following should be moved to a character class or something
+    glm::vec3 modelDir;
+    glm::vec3 modelUp;
+    glm::vec3 modelRight;
+    glm::vec3 modelTarget;
+    //
+
+    std::vector<BoneRotation> boneRotations;
+    
+    void Render(glm::vec3 pos, Shader* shader, Camera* cam);
     void SetBoneMatricesUnif(Shader* shader);
+    void ApplyLighting(Shader* shader);
     void calcInverseTransform(Bone* bone, glm::mat4 parentTransform);
     // maybe by name instead but this works for now
     void PlayAnimation(int animIndex);
+    void PlayAnimationOnce(int animIndex);
     void StopAnimation();
     bool IsPlayingAnimation();
     void UpdateAnimation(float dt);
     void calcAnimTransform(Bone* bone, glm::mat4 transform);
     std::array<glm::mat4, 100> boneMatrices;
+
+    int currentAnimationIndex = -1;
   private:
     Bone* rootBone = nullptr;
     glm::mat4 globalInverseMat4;
-    int currentAnimationIndex = -1;
     std::map<unsigned int, Bone> boneMap;
     std::map<std::string, unsigned int> namedBoneMap;
     std::map<unsigned int, AnimationMetaData> animationMap;

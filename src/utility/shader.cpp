@@ -7,7 +7,7 @@
 #include <string>
 #include <iostream>
 
-Shader::Shader(bool hey, std::string vertexString, std::string fragmentString)
+Shader::Shader(std::string vertexString, std::string fragmentString)
 {
   const char* vShaderCode = vertexString.c_str();
   const char* fShaderCode = fragmentString.c_str();
@@ -36,7 +36,7 @@ Shader::Shader(bool hey, std::string vertexString, std::string fragmentString)
   if (!success)
   {
     glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-    std::cout << "fragment shader comp failure :" << infoLog << std::endl;
+    std::cout << "fragment shader comp failure :" << infoLog << ", file: " << fragmentString << std::endl;
   }
 
   ID = glCreateProgram();
@@ -83,7 +83,6 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
   const char* vShaderCode = vertexCode.c_str();
   const char* fShaderCode = fragmentCode.c_str();
 
-
   unsigned int vertex, fragment;
   int success;
   char infoLog[512];
@@ -108,7 +107,7 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
   if (!success)
   {
     glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-    printf("fragment shader comp failure : %s\n", infoLog);
+    printf("fragment shader comp failure : %s, %s\n", infoLog, fragmentPath);
   }
 
   ID = glCreateProgram();

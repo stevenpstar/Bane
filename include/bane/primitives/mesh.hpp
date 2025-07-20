@@ -19,10 +19,10 @@ class Mesh
         std::vector<unsigned int> ind,
         std::vector<Texture> tex);
 
-    void Render(Shader &shader, Camera* camera);
+    void Render(glm::vec3 pos, glm::vec3 rotation, Shader* shader, Camera* camera);
+    void Render(glm::mat4 transform, Shader* shader, Camera* camera);
     void setupMesh();
-
-  private:
     unsigned int VAO, VBO, EBO;
+  private:
 };
 #endif

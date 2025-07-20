@@ -1,5 +1,7 @@
-#include "bane/components/camera.hpp"
-#include "glm/ext/matrix_transform.hpp"
+#include <bane/components/camera.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/trigonometric.hpp>
+#include <cmath>
 #include <glad/glad.h>
 #include <bane/primitives/vertex.hpp>
 #include <bane/primitives/texture.hpp>
@@ -52,9 +54,9 @@ void Mesh::setupMesh()
   glBindVertexArray(0);
 }
 
-void Mesh::Render(Shader &shader, Camera* camera)
+void Mesh::Render(glm::vec3 pos, glm::vec3 rotation, Shader* shader, Camera* camera)
 {
-  shader.use();
+  shader->use();
   unsigned int diffuseNr = 1;
   unsigned int specularNr = 1;
   for (unsigned int i = 0; i < textures.size(); i++)
@@ -71,17 +73,32 @@ void Mesh::Render(Shader &shader, Camera* camera)
       number = std::to_string(specularNr++);
     }
 
-    shader.setInt(("material." + name + number).c_str(), i);
+    shader->setInt(("material." + name + number).c_str(), i);
 
     glBindTexture(GL_TEXTURE_2D, textures[i].id);
   }
   glm::mat4 model = glm::mat4(1.f);
-  model = glm::translate(model, glm::vec3(0.f, 0.f, 0.f));
+  model = glm::translate(model, pos);
+  glm::mat4 rot = glm::mat4(1.f);
+  rot = glm::rotate(rot, atan2(rotation.x, rotation.z), glm::vec3(0.f, 1.f, 0.f));
+ // model = model * rot;
+  glm::mat4 rotX = glm::mat4(1.f);
+  rotX = glm::rotate(rot, atan2(rotation.y, rotation.z), glm::vec3(1.f, 0.f, 0.f));
+  model = model * rotX;
+  //model = glm::rotate(model, atan2(rotation.x, rotation.z), glm::vec3(0.f, 1.f, 0.f));
 
-  shader.setMat4("model", model);
-  shader.setMat4("view", camera->getTransform());
-  shader.setMat4("projection", camera->projection);
-
+  shader->setMat4("model", model);
+  shader->setMat4("view", camera->getTransform());
+  shader->setMat4("projection", camera->projection);
+  shader->setVec3("viewPos", camera->getPosition());
+  shader->setVec3("objectColour", glm::vec3(1.f, 1.f, 1.f));
+//  shader.setVec3("lightPosition", glm::vec3(5.f, 2.f, 2.f));
+  shader->setVec3("dirLight.direction", glm::vec3(5.f, 2.f, 2.f));
+  shader->setVec3("material.ambient", glm::vec3(0.f, 0.f, 0.f));
+  shader->setFloat("material.shininess", 32.f);
+  shader->setVec3("dirLight.ambient", glm::vec3(0.5f, 0.5f, 0.5f));
+  shader->setVec3("dirLight.diffuse", glm::vec3(1.f, 1.f, 1.f));
+  shader->setVec3("dirLight.specular", glm::vec3(1.f, 1.f, 1.f));
   glActiveTexture(GL_TEXTURE0);
 
   glBindVertexArray(VAO);
@@ -89,4 +106,50 @@ void Mesh::Render(Shader &shader, Camera* camera)
   glBindVertexArray(0);
 }
 
+void Mesh::Render(glm::mat4 transform, Shader* shader, Camera* camera)
+{
+  shader->use();
+  unsigned int diffuseNr = 1;
+  unsigned int specularNr = 1;
+  for (unsigned int i = 0; i < textures.size(); i++)
+  {
+    glActiveTexture(GL_TEXTURE0 + i);
+    std::string number;
+    std::string name = textures[i].type;
+
+    if (name == "texture_diffuse")
+    {
+      number = std::to_string(diffuseNr++);
+    } else if (name == "texture_specular")
+    {
+      number = std::to_string(specularNr++);
+    }
+
+    shader->setInt(("material." + name + number).c_str(), i);
+
+    glBindTexture(GL_TEXTURE_2D, textures[i].id);
+  }
+
+  shader->setMat4("model", transform);
+  shader->setMat4("view", camera->getTransform());
+  shader->setMat4("projection", camera->projection);
+  shader->setVec3("viewPos", camera->getPosition());
+  shader->setVec3("objectColour", glm::vec3(1.f, 1.f, 1.f));
+  shader->setVec3("dirLight.direction", glm::vec3(5.f, 2.f, 2.f));
+  shader->setVec3("material.ambient", glm::vec3(0.f, 0.f, 0.f));
+  shader->setFloat("material.shininess", 32.f);
+  shader->setVec3("dirLight.ambient", glm::vec3(0.4f, 0.4f, 0.4f));
+  shader->setVec3("dirLight.diffuse", glm::vec3(1.f, 1.f, 1.f));
+  shader->setVec3("dirLight.specular", glm::vec3(1.f, 1.f, 1.f));
+  shader->setVec3("spotLight.position", camera->getPosition());
+  shader->setVec3("spotLight.direction", camera->getDirection());
+  shader->setVec3("spotLight.diffuse", glm::vec3(1.f, 0.f, 0.f));
+  shader->setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5)));
+  shader->setFloat("spotLight.outerCutOff", glm::cos(glm::radians(17.5)));
+  glActiveTexture(GL_TEXTURE0);
+
+  glBindVertexArray(VAO);
+  glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+  glBindVertexArray(0);
+}
 

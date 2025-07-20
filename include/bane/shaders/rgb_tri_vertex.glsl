@@ -1,5 +1,5 @@
 std::string rgb_tri_vert_shader_src = R"(
-#version 330 core
+#version 460 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aColour;
 

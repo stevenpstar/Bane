@@ -18,10 +18,13 @@ class Model
   public:
     Model(const char *path);
     glm::vec3 position;
-    void Render(Shader &shader, Camera* cam);
-   
-  private:
+    glm::vec3 rotation;
+    void Render(Shader* shader, Camera* camera);
+    void Render(glm::mat4 transform, Shader* shader, Camera* camera);
+    void SetPosition(glm::vec3 pos);
     std::vector<Mesh> meshes;
+
+  private:
     std::string directory;
     std::vector<Texture> textures_loaded;
 

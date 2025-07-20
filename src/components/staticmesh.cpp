@@ -1,3 +1,4 @@
+#include <bane/components/camera.hpp>
 #include <bane/primitives/model.hpp>
 #include <bane/utility/shader.hpp>
 #include <bane/components/staticmesh.hpp>
@@ -9,5 +10,5 @@ StaticMesh::StaticMesh(Model* m,
   model = m;
 }
 
-void StaticMesh::Render()
+void StaticMesh::Render(Camera* camera)
 {}

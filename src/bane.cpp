@@ -21,6 +21,11 @@ void SetCursorCallback(GLFWwindow* window, void(*f)(GLFWwindow* window, double x
   glfwSetCursorPosCallback(window, f);
 }
 
+void SetMouseInputCallback(GLFWwindow* window, void(*f)(GLFWwindow* window, int button, int action, int mods))
+{
+  glfwSetMouseButtonCallback(window, f);
+}
+
 void SetResizeCallback(GLFWwindow *window, void (*f)(GLFWwindow *, int, int))
 {
   glfwSetFramebufferSizeCallback(window, f);
@@ -38,13 +43,12 @@ void CaptureMouse(GLFWwindow* window)
 
 GLFWwindow* CreateWindow()
 {
-  std::cout << "Trying to create window!\n";
   glfwInit();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  GLFWwindow* window = glfwCreateWindow(800, 600, "Bane Engine", NULL, NULL);
+  GLFWwindow* window = glfwCreateWindow(1920, 1080, "Human Power", NULL, NULL);
   if (window == NULL)
   {
     std::cout<< "Failed to create GLFW window" << std::endl;
@@ -64,13 +68,24 @@ GLFWwindow* CreateWindow()
   glViewport(0, 0, 800, 600);
   glEnable(GL_DEPTH_TEST);
 
-  // some setup, should be moved to own function(s)
-  unsigned int VAO, VBO, EBO;
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glBindVertexArray(VAO);
+ // // Font/Freetype setup
+ // FT_Library ft;
+ // if (FT_Init_FreeType(&ft))
+ // {
+ //   std::cout << "Error initialising Free Type Library\n";
+ // }
 
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+ // FT_Face face;
+ // if (FT_New_Face(ft, "../assets/fonts/Arial.ttf", 0, &face))
+ // {
+ //   std::cout << "Error loading font\n";
+ // }
+
+ // FT_Set_Pixel_Sizes(face, 0, 48);
+  //
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   return window;
 }
@@ -87,7 +102,7 @@ void Poll()
 
 void ClearColour()
 {
-  glClearColor(1.f, 1.f, 1.f, 1.f);
+  glClearColor(0.f, 0.f, 0.f, 1.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

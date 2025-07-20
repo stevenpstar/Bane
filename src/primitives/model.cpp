@@ -18,6 +18,7 @@
 
 Model::Model(const char* path)
 {
+  rotation = glm::vec3(0.f, 0.f, 0.f);
   this->loadModel(path);
 }
 
@@ -178,10 +179,24 @@ unsigned int Model::TextureFromFile(const char *path, const std::string &directo
     return textureID;
 }
 
-void Model::Render(Shader &shader, Camera* camera)
+void Model::Render(Shader* shader, Camera* camera)
 {
   for (unsigned int i = 0; i < meshes.size(); i++)
   {
-    meshes[i].Render(shader, camera);
+    meshes[i].Render(position, rotation, shader, camera);
   }
+}
+
+void Model::Render(glm::mat4 transform, Shader* shader, Camera* camera)
+{
+  for (unsigned int i = 0; i < meshes.size(); i++)
+  {
+    meshes[i].Render(transform, shader, camera);
+  }
+}
+
+
+void Model::SetPosition(glm::vec3 pos)
+{
+  position = pos;
 }

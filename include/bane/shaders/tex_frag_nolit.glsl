@@ -1,5 +1,5 @@
 std::string tex_frag_nolit_shader_src = R"(
-#version 330 core
+#version 460 core
 out vec4 FragColour;
 
 uniform vec3 lightPosition;

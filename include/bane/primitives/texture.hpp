@@ -6,4 +6,7 @@ struct Texture {
   std::string type;
   std::string path;
 };
+
+unsigned int createTexture(const char* path);
+
 #endif
