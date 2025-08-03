@@ -11,7 +11,7 @@ OpenGL / SDL3
 - Basic Raycasting
 - Basic AABB Collision detection
 
-![Preview Image 1](./matsc.png)
+![Preview Image 1](matsc.png)
 
 ## Games 
 
@@ -21,4 +21,4 @@ https://itch.io/jam/kenney-jam-2025
 
 Play here: https://starven.itch.io/human-power 
 
-![Human Power Screenshot](./humanpowersc.png)
+![Human Power Screenshot](humanpowersc.png)
