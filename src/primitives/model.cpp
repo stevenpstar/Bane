@@ -152,15 +152,26 @@ unsigned int Model::TextureFromFile(const char *path, const std::string &directo
     if (data)
     {
         GLenum format;
+        GLenum format2;
         if (nrComponents == 1)
+        {
             format = GL_RED;
+            format2 = GL_RED;
+        }
         else if (nrComponents == 3)
-            format = GL_RGB;
+        {
+            format = GL_SRGB;
+            format2 = GL_RGB;
+        }
         else if (nrComponents == 4)
+        {
+            format = GL_SRGB_ALPHA;
             format = GL_RGBA;
+        }
 
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format2, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -168,11 +179,13 @@ unsigned int Model::TextureFromFile(const char *path, const std::string &directo
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+        glBindTexture(GL_TEXTURE_2D, 0);
+
         stbi_image_free(data);
     }
     else
     {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
+        std::cout << "Texture failed to load at path: " << path << " filename: " << filename << std::endl;
         stbi_image_free(data);
     }
 
@@ -187,14 +200,21 @@ void Model::Render(Shader* shader, Camera* camera)
   }
 }
 
-void Model::Render(glm::mat4 transform, Shader* shader, Camera* camera)
+void Model::Render(glm::mat4 transform, Shader* shader, Camera* camera, unsigned int shadowTex)
 {
   for (unsigned int i = 0; i < meshes.size(); i++)
   {
-    meshes[i].Render(transform, shader, camera);
+    meshes[i].Render(transform, shader, camera, shadowTex);
   }
 }
 
+void Model::RenderBasic()
+{
+  for (unsigned int i = 0; i < meshes.size(); ++i)
+  {
+    meshes[i].RenderBasic();
+  }
+}
 
 void Model::SetPosition(glm::vec3 pos)
 {

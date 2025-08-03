@@ -8,5 +8,6 @@ struct Texture {
 };
 
 unsigned int createTexture(const char* path);
+unsigned int createSkyBoxTexture(const char* folder);
 
 #endif

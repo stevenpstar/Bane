@@ -20,7 +20,8 @@ class Model
     glm::vec3 position;
     glm::vec3 rotation;
     void Render(Shader* shader, Camera* camera);
-    void Render(glm::mat4 transform, Shader* shader, Camera* camera);
+    void Render(glm::mat4 transform, Shader* shader, Camera* camera, unsigned int shadowTex);
+    void RenderBasic();
     void SetPosition(glm::vec3 pos);
     std::vector<Mesh> meshes;
 

@@ -20,7 +20,8 @@ class Mesh
         std::vector<Texture> tex);
 
     void Render(glm::vec3 pos, glm::vec3 rotation, Shader* shader, Camera* camera);
-    void Render(glm::mat4 transform, Shader* shader, Camera* camera);
+    void Render(glm::mat4 transform, Shader* shader, Camera* camera, unsigned int shadowTex);
+    void RenderBasic();
     void setupMesh();
     unsigned int VAO, VBO, EBO;
   private:

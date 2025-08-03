@@ -1,34 +1,63 @@
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_pixels.h>
+#include <SDL3/SDL_render.h>
+#include <bane/components/camera.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#include <SDL3/SDL_log.h>
+#include <SDL3/SDL_surface.h>
+#include <SDL3/SDL_video.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_image.h>
 #include <bane/utility/shader.hpp>
 #include <bane/bane.hpp>
 #include <iostream>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_ttf.h>
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <stbimage/stb_image.h>
 #include <array>
+#include <glm/glm.hpp>
+SDL_Window* window {nullptr};
+SDL_Surface* surface {nullptr};
+SDL_Renderer* renderer {nullptr};
+SDL_GLContext context { nullptr };
+SDL_Cursor* cursor { nullptr };
+
+// frame buffer testing
+unsigned int screenVAO, screenVBO, fbo, rbo, fboTex;
+unsigned int shadowVAO, shadowVBO;
+unsigned int shadowDepthMapFBO;
+unsigned int depthMap;
+
+//text rendering testing
+SDL_Surface textSurface;
+bool CursorOn = false;
 
 void Print(std::string message)
 {
   std::cout << message << std::endl;
 }
 
-void framebuffer_size_callback(__attribute__((unused)) GLFWwindow* window, int width, int height)
+void framebuffer_size_callback(__attribute__((unused)) SDL_Window* window, int width, int height)
 {
-  glViewport(0, 0, width, height);
+ // glViewport(0, 0, width, height);
 }
 
-void SetCursorCallback(GLFWwindow* window, void(*f)(GLFWwindow* window, double xpos, double ypos))
+void SetCursorCallback(SDL_Window* window, void(*f)(SDL_Window* window, double xpos, double ypos))
 {
-  glfwSetCursorPosCallback(window, f);
+  //glfwSetCursorPosCallback(window, f);
 }
 
-void SetMouseInputCallback(GLFWwindow* window, void(*f)(GLFWwindow* window, int button, int action, int mods))
+void SetMouseInputCallback(SDL_Window* window, void(*f)(SDL_Window* window, int button, int action, int mods))
 {
-  glfwSetMouseButtonCallback(window, f);
+  //glfwSetMouseButtonCallback(window, f);
 }
 
-void SetResizeCallback(GLFWwindow *window, void (*f)(GLFWwindow *, int, int))
+void SetResizeCallback(SDL_Window *window, void (*f)(SDL_Window *, int, int))
 {
-  glfwSetFramebufferSizeCallback(window, f);
+  //glfwSetFramebufferSizeCallback(window, f);
 }
 
 void ResizeViewport(int width, int height)
@@ -36,89 +65,242 @@ void ResizeViewport(int width, int height)
   glViewport(0, 0, width, height);
 }
 
-void CaptureMouse(GLFWwindow* window)
+void CaptureMouse(SDL_Window* window)
 {
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+ // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
-GLFWwindow* CreateWindow()
+SDL_Window* CreateWindow()
 {
-  glfwInit();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-  GLFWwindow* window = glfwCreateWindow(1920, 1080, "Human Power", NULL, NULL);
-  if (window == NULL)
+  bool success = true;
+  // trying to init SDL
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == false)
   {
-    std::cout<< "Failed to create GLFW window" << std::endl;
-    glfwTerminate();
-    throw std::runtime_error("Failed to create GLFW window");
+    SDL_Log("SDL could not be initialised! SDL Error: %s\n", SDL_GetError() );
+    success = false;
   }
-  glfwMakeContextCurrent(window);
-  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
- // stbi_set_flip_vertically_on_load(true);
 
-  if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+  if (TTF_Init() == false)
   {
-    std::cout<<"Failed to init GLAD"<< std::endl;
+    SDL_Log("SDL TTF could not be initialised! SDL Error: %s\n", SDL_GetError());
+    success = false;
+  } else {
+    SDL_Log("SDL TTF initialised!\n");
+  }
+
+  SDL_GL_LoadLibrary(nullptr);
+  SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
+
+  if (success) {
+    std::cout << "Loading window!\n";
+    if (window = SDL_CreateWindow("Bane Engine", 1920, 1080, SDL_WINDOW_OPENGL); window == nullptr)
+    {
+      SDL_Log("Window could not be created, SDL Error: %s\n", SDL_GetError());
+      success = false;
+    } 
+  }
+
+  if (success) {
+    context = SDL_GL_CreateContext(window);
+    if (context == nullptr) {
+      SDL_Log("Context null: %s", SDL_GetError());
+      DestroyBane();
+    } 
+  }
+
+  SDL_GL_MakeCurrent(window, context);
+
+  if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+  {
+    std::cout << " Failed to load glad\n";
     throw std::runtime_error("Failed to initialise Glad!");
   }
-
-  glViewport(0, 0, 800, 600);
+  SDL_SetWindowResizable(window, true);
+  glViewport(0, 0, 1920, 1080);
   glEnable(GL_DEPTH_TEST);
 
- // // Font/Freetype setup
- // FT_Library ft;
- // if (FT_Init_FreeType(&ft))
- // {
- //   std::cout << "Error initialising Free Type Library\n";
- // }
-
- // FT_Face face;
- // if (FT_New_Face(ft, "../assets/fonts/Arial.ttf", 0, &face))
- // {
- //   std::cout << "Error loading font\n";
- // }
-
- // FT_Set_Pixel_Sizes(face, 0, 48);
-  //
+  // generating texture once here, instead of every time we want to
+  // render text? Will it work? We will see.
+  // also initialise the renderer here????
+  renderer = SDL_CreateRenderer(window, "opengl");
+  if (renderer == nullptr)
+  {
+    SDL_Log("Renderer did not create properly: %s", SDL_GetError());
+  }
 
   glEnable(GL_BLEND);
+  glEnable(GL_FRAMEBUFFER_SRGB);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+//  SDL_SetWindowMouseGrab(window, true);
+ // SDL_SetWindowRelativeMouseMode(window, true);
+ 
   return window;
 }
 
 float GetTime()
 {
-  return glfwGetTime();
+  //return glfwGetTime();
+  return 0.f;
 }
 
 void Poll()
 {
-  glfwPollEvents();
+  //glfwPollEvents();
 }
 
 void ClearColour()
 {
-  glClearColor(0.f, 0.f, 0.f, 1.f);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void SwapBuffer(GLFWwindow* window)
+void SwapBuffer(SDL_Window* w)
 {
-  glfwSwapBuffers(window);
+  SDL_GL_SwapWindow(w);
+  //glfwSwapBuffers(window);
+}
+
+glm::mat4 RenderShadow(SDL_Window* window, int width, int height, glm::vec3 lightPos, Shader* shader, Camera* camera)
+{
+  // setup orth projection
+  float near_plane = 1.f, far_plane = 100.f;
+  glm::mat4 lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
+  glm::mat4 lightView = glm::lookAt(
+      lightPos,
+      glm::vec3(0.f, 0.f, 0.f),
+      glm::vec3(0.f, 1.f, 0.f));
+  glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+  glEnable(GL_DEPTH_TEST);
+  glCullFace(GL_FRONT);
+  shader->use();
+  shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+  glViewport(0, 0, width, height);
+  glBindFramebuffer(GL_FRAMEBUFFER, shadowDepthMapFBO);
+  glClear(GL_DEPTH_BUFFER_BIT);
+
+  return lightSpaceMatrix;
+  // Render scene needs to be called in application/game
+}
+
+unsigned int getShadowTexture()
+{
+  return depthMap;
+}
+
+void SetupShadowBuffer(SDL_Window* window, int width, int height)
+{
+  glGenFramebuffers(1, &shadowDepthMapFBO);
+
+  glGenTextures(1, &depthMap);
+  glBindTexture(GL_TEXTURE_2D, depthMap);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  float borderColour[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+  glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColour);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, shadowDepthMapFBO);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void SetupFrameBuffer(SDL_Window *window, int width, int height)
+{
+ // frame buffer testing
+  glGenFramebuffers(1, &fbo);
+  glGenRenderbuffers(1, &rbo);
+  glGenTextures(1, &fboTex);
+
+  float quadVertices[] = {
+    // positions   // texCoords
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -1.0f,  0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+
+    -1.0f,  1.0f,  0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f
+  };
+
+  glGenVertexArrays(1, &screenVAO);
+  glGenBuffers(1, &screenVBO);
+  glBindVertexArray(screenVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  
+  //bind fboTex
+  glBindTexture(GL_TEXTURE_2D, fboTex);
+
+  // this should take in width/height of window in this function probably
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+  glad_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glad_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTex, 0);
+
+  // render buffer object, maybe need to do this for the texture to be correctly loaded (depth etc)
+  glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+  auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
+  {
+    std::cout << "Fbuffer not complete: " << fboStatus << "\n";
+  }
+}
+
+void SwitchBuffer()
+{
+  glViewport(0, 0, 1920, 1080);
+  glCullFace(GL_BACK);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+  glEnable(GL_DEPTH_TEST);
+}
+
+void RenderToScreenTexture(Shader* screenShader)
+{
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glClearColor(1.f, 1.f, 1.f, 1.f);
+  glClear(GL_COLOR_BUFFER_BIT);
+  
+  glBindVertexArray(screenVAO);
+  glDisable(GL_DEPTH_TEST);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, fboTex);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glBindVertexArray(0);
 }
 
 void DestroyBane()
 {
-  glfwTerminate();
+  SDL_DestroyRenderer(renderer);
+  renderer = nullptr;
+  SDL_DestroySurface(surface);
+  surface = nullptr;
+  SDL_DestroyWindow(window);
+  window = nullptr;
+  glDeleteFramebuffers(1, &fbo);
+  glDeleteTextures(1, &fboTex);
+  TTF_Quit();
+  SDL_Quit();
 }
 
-bool ShouldClose(GLFWwindow* window)
+bool ShouldClose(SDL_Window* window)
 {
-  return glfwWindowShouldClose(window);
+  return false;
+  //return glfwWindowShouldClose(window);
 }
 
 // Test function
@@ -132,4 +314,76 @@ void RenderColouredTriangle(Shader* shader, std::array<float, 18> &triangle)
   glEnableVertexAttribArray(1);
   shader->use();
   glDrawArrays(GL_TRIANGLES, 0, 3);
+}
+
+// Testing here for now, move to own class/file eventually
+unsigned int CreateTextureFromString(std::string text, TTF_Font* font, int& width, int& height)
+{
+  unsigned int textTexture;
+  SDL_Color colour = {255, 255, 255, 255};
+  // 0 for null terminated text, I think c_str() should be fine here?
+  SDL_Surface* textSurface = TTF_RenderText_Blended(font, text.c_str(), 0, colour);
+  if (textSurface == nullptr)
+  {
+    std::cout << "Text surface did not render / create properly!\n";
+
+    SDL_Log("SDL TEXT TTF: SDL Error: %s\n", SDL_GetError() );
+    // dunno if this is good if it did not create properly
+    SDL_DestroySurface(textSurface);
+  } else {
+
+    // create a texture from the surface, to then be converted into an opengl texture
+    if (!renderer) {
+      SDL_Log("No Renderer found");
+      return 0;
+    }
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, textSurface);
+    if (tex == nullptr)
+    {
+      SDL_Log("Texture did not load correctly: %s", SDL_GetError());
+      return 0;
+    }
+
+    width = tex->w;
+    height = tex->h;
+
+    // attempting to convert
+    glDeleteTextures(1, &textTexture);
+    glGenTextures(1, &textTexture);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textTexture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex->w, tex->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, textSurface->pixels);
+
+    SDL_DestroyTexture(tex);
+    SDL_DestroySurface(textSurface);
+  }
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+  return textTexture;
+}
+
+void GetScreenDimensions(SDL_Window* window, int& width, int& height)
+{
+  SDL_GetWindowSize(window, &width, &height);
+}
+
+void SetCursorOnOff(bool on)
+{
+  CursorOn = on;
+}
+
+void SetCursorImage(const char* path)
+{
+  SDL_Surface *surface = IMG_Load(path);
+  cursor = SDL_CreateColorCursor(surface, 8, 8);
+  SDL_SetCursor(cursor);
 }

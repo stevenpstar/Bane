@@ -1,3 +1,4 @@
+#include "SDL3/SDL_stdinc.h"
 #include <glm/geometric.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/trigonometric.hpp>
@@ -9,42 +10,41 @@
 #include <bane/components/character.hpp>
 #include <bane/components/camera.hpp>
 #include <bane/controllers/testCharController.hpp>
-#include <GLFW/glfw3.h>
 #include <cmath>
 
-void TestCharController::processInput(__attribute__((unused)) GLFWwindow* window)
+void TestCharController::processInput(__attribute__((unused)) SDL_Window* window, Uint32 button, bool pressed)
 {
-  if (disabled) { return; }
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-  {
-    forwardDown = true;
-  } else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {
-    forwardDown = false;
-  }
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-  {
-    backDown = true;
-  } else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_RELEASE)
-  {
-    backDown = false;
-  }
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-  {
-    leftDown = true;
-  } else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_RELEASE)
-  {
-    leftDown = false;
-  }
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-  {
-    rightDown = true;
-  } else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_RELEASE)
-  {
-    rightDown = false;
-  }
+//  if (disabled) { return; }
+//  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+//  {
+//    forwardDown = true;
+//  } else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {
+//    forwardDown = false;
+//  }
+//  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+//  {
+//    backDown = true;
+//  } else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_RELEASE)
+//  {
+//    backDown = false;
+//  }
+//  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+//  {
+//    leftDown = true;
+//  } else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_RELEASE)
+//  {
+//    leftDown = false;
+//  }
+//  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+//  {
+//    rightDown = true;
+//  } else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_RELEASE)
+//  {
+//    rightDown = false;
+//  }
 }
 
-void TestCharController::processMouse(GLFWwindow*, double xpos, double ypos)
+void TestCharController::processMouse(SDL_Window*, double xpos, double ypos)
 {
   const float sensitivity = 0.1f;
   if (initialising)

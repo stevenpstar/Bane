@@ -1,5 +1,6 @@
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_stdinc.h>
 #include <bane/utility/ray.hpp>
-#include <GLFW/glfw3.h>
 #include <bane/controllers/spectatorController.hpp>
 #include <bane/components/camera.hpp>
 #include <bane/components/character.hpp>
@@ -9,44 +10,45 @@ SpectatorController::SpectatorController(Camera* cam)
   camera = cam;
 }
 
-void SpectatorController::processInput(__attribute__((unused)) GLFWwindow* window)
+void SpectatorController::processInput(__attribute__((unused)) SDL_Window* window, Uint32 button, bool pressed)
 {
   if (disabled) { return; }
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-  {
+ 
+  if (button == SDLK_W && pressed) {
     forwardDown = true;
-  } else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {
+  }
+  else if (button == SDLK_W && !pressed) {
     forwardDown = false;
   }
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-  {
+
+  if (button == SDLK_S && pressed) {
     backDown = true;
-  } else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_RELEASE)
-  {
+  }
+  else if (button == SDLK_S && !pressed) {
     backDown = false;
   }
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-  {
+
+  if (button == SDLK_A && pressed) {
     leftDown = true;
-  } else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_RELEASE)
-  {
+  }
+  else if (button == SDLK_A && !pressed) {
     leftDown = false;
   }
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-  {
+
+  if (button == SDLK_D && pressed) {
     rightDown = true;
-  } else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_RELEASE)
-  {
+  }
+  else if (button == SDLK_D && !pressed) {
     rightDown = false;
   }
 }
 
-void SpectatorController::processMouseInput(GLFWwindow*, int button, int action, int mods)
+void SpectatorController::processMouseInput(SDL_Window*, int button, int action, int mods)
 {
 
 }
 
-void SpectatorController::processMouse(GLFWwindow*, double xpos, double ypos)
+void SpectatorController::processMouse(SDL_Window*, double xpos, double ypos)
 {
   const float sensitivity = 0.1f;
   if (initialising)

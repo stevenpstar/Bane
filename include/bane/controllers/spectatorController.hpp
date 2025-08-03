@@ -1,8 +1,9 @@
 #ifndef BANE_SPEC_CONTROLLER
 #define BANE_SPEC_CONTROLLER
+#include "SDL3/SDL_stdinc.h"
 #include <bane/controllers/icontroller.hpp>
 #include <glm/glm.hpp>
-struct GLFWwindow;
+struct SDL_Window;
 class Camera;
 class Character;
 class SpectatorController : public IController
@@ -25,9 +26,9 @@ class SpectatorController : public IController
     SpectatorController(Camera* camera);
     Character* character;
     bool captured = false;
-    virtual void processInput(GLFWwindow* window) override;
-    virtual void processMouse(GLFWwindow* window, double xpos, double ypos) override;
-    virtual void processMouseInput(GLFWwindow* window, int button, int action, int mods) override;
+    virtual void processInput(SDL_Window* window, Uint32 button, bool pressed) override;
+    virtual void processMouse(SDL_Window* window, double xpos, double ypos) override;
+    virtual void processMouseInput(SDL_Window* window, int button, int action, int mods) override;
     virtual void update(float deltaTime) override;
 
     void centerMousePosition(int width, int height);
