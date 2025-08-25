@@ -1,57 +1,53 @@
+#include "bane/components/lightdata.hpp"
 #include "bane/utility/boneRotation.hpp"
 #include "glm/common.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/matrix.hpp"
 #include "glm/trigonometric.hpp"
-#include <glm/fwd.hpp>
 #include <bane/primitives/assimpglmhelpers.hpp>
+#include <glm/fwd.hpp>
 #include <string>
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/string_cast.hpp>
-#include <glm/gtx/quaternion.hpp>
-#include <bane/components/camera.hpp>
-#include <cstring>
-#include <glad/glad.h>
+#include <assimp/Importer.hpp>
 #include <assimp/material.h>
 #include <assimp/mesh.h>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 #include <assimp/types.h>
-#include <stbimage/stb_image.h>
+#include <bane/components/camera.hpp>
 #include <bane/primitives/animatedModel.hpp>
 #include <bane/primitives/mesh.hpp>
-#include <bane/primitives/vertex.hpp>
 #include <bane/primitives/texture.hpp>
+#include <bane/primitives/vertex.hpp>
 #include <bane/utility/shader.hpp>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#include <cstring>
+#include <glad/glad.h>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <iostream>
+#include <stbimage/stb_image.h>
 #include <vector>
 
 unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma = false);
 
-AnimatedModel::AnimatedModel(const char* path, glm::vec3 pos)
-{
+AnimatedModel::AnimatedModel(const char *path, glm::vec3 pos) {
   position = pos;
   modelTarget = glm::vec3(pos.x, pos.y, pos.z - 3.f);
   modelDir = glm::normalize(pos - modelTarget);
   modelUp = glm::vec3(0.f, 1.f, 0.f);
   modelRight = glm::normalize(glm::cross(modelUp, modelDir));
 
-  for (int i = 0; i < 100; ++i)
-  {
+  for (int i = 0; i < 100; ++i) {
     boneMatrices[i] = glm::mat4(1.f);
   }
   this->loadAnimatedModel(path);
 }
 
-void AnimatedModel::loadAnimatedModel(std::string path)
-{
+void AnimatedModel::loadAnimatedModel(std::string path) {
   Assimp::Importer importer;
-  const aiScene *scene = importer.ReadFile(path,
-      aiProcess_Triangulate | aiProcess_FlipUVs);
+  const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
 
-  if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
-  {
+  if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     std::cout << "Error importing model: " << importer.GetErrorString() << std::endl;
     return;
   }
@@ -59,76 +55,67 @@ void AnimatedModel::loadAnimatedModel(std::string path)
   glm::mat4 rootTransform = AssimpGLMHelpers::ConvertMatrixToGLMFormat(scene->mRootNode->mTransformation);
   globalInverseMat4 = glm::inverse(rootTransform);
   directory = path.substr(0, path.find_last_of('/'));
-  //std::cout << "AnimatedModel found in directory: " << directory << std::endl;
+  // std::cout << "AnimatedModel found in directory: " << directory << std::endl;
   processNode(scene->mRootNode, scene);
   addAnimationData(scene);
-  meshes[meshes.size()-1].setupMesh();
+  meshes[meshes.size() - 1].setupMesh();
 }
 
-void AnimatedModel::processNode(aiNode* node, const aiScene* scene)
-{
-  for (unsigned int i = 0; i < node->mNumMeshes; i++)
-  {
-    aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+void AnimatedModel::processNode(aiNode *node, const aiScene *scene) {
+  for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+    aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
     meshes.push_back(processMesh(mesh, scene));
-    processBones(meshes[meshes.size()-1].vertices, mesh, scene, node);
-    for (auto vert : meshes[meshes.size()-1].vertices)
-    {
+    processBones(meshes[meshes.size() - 1].vertices, mesh, scene, node);
+    for (auto vert : meshes[meshes.size() - 1].vertices) {
       if (vert.BoneIds[0] == -1) {
         std::cout << "Vertex found with unassigned bone\n";
       }
     }
     createHierarchy(mesh, scene->mRootNode, scene);
     calcInverseTransform(rootBone, glm::mat4(1.f));
-    auto vertices = meshes[meshes.size()-1].vertices;
+    auto vertices = meshes[meshes.size() - 1].vertices;
   }
-  for (unsigned int i = 0; i < node->mNumChildren; i++)
-  {
+  for (unsigned int i = 0; i < node->mNumChildren; i++) {
     processNode(node->mChildren[i], scene);
   }
 }
 
-void AnimatedModel::createHierarchy(aiMesh* mesh, aiNode* node, const aiScene* scene)
-{
-  const char* nodeChars = node->mName.C_Str();
+void AnimatedModel::createHierarchy(aiMesh *mesh, aiNode *node, const aiScene *scene) {
+  const char *nodeChars = node->mName.C_Str();
   std::string nodeName = nodeChars;
-  if (namedBoneMap.count(nodeName))
-  {
+  if (namedBoneMap.count(nodeName)) {
     // we have found a bone. Get parent id (if exists)
     unsigned int parentId = -1;
-    aiNode* parentNode = node->mParent;
-    if (parentNode)
-    {
-      const char* parentNodeChars = parentNode->mName.C_Str();
+    aiNode *parentNode = node->mParent;
+    if (parentNode) {
+      const char *parentNodeChars = parentNode->mName.C_Str();
       std::string parentNodeName = parentNodeChars;
 
-      if (namedBoneMap.count(parentNodeName))
-      {
+      if (namedBoneMap.count(parentNodeName)) {
         // This is not the root bone, add it to its parents children vector
         boneMap[namedBoneMap[parentNodeName]].Children.push_back(&boneMap[namedBoneMap[nodeName]]);
 
       } else {
         if (rootBone == nullptr) {
           rootBone = &boneMap[namedBoneMap[nodeName]];
+        } else {
+          std::cout << "Error: This game engine is bad and cannot support multiple root bones!\n";
         }
       }
       boneMap[namedBoneMap[nodeName]].LocalTransform = AssimpGLMHelpers::ConvertMatrixToGLMFormat(node->mTransformation);
     }
   }
 
-  for (unsigned int i = 0; i < node->mNumChildren; ++i)
-  {
+  for (unsigned int i = 0; i < node->mNumChildren; ++i) {
     createHierarchy(mesh, node->mChildren[i], scene);
   }
 }
 
-Mesh AnimatedModel::processMesh(aiMesh* mesh, const aiScene* scene)
-{
+Mesh AnimatedModel::processMesh(aiMesh *mesh, const aiScene *scene) {
   std::vector<Vertex> vertices;
   std::vector<unsigned int> indices;
   std::vector<Texture> textures;
-  for (unsigned int i = 0; i < mesh->mNumVertices; i++)
-  {
+  for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
     Vertex vertex;
     glm::vec3 vector;
     vector.x = mesh->mVertices[i].x;
@@ -141,8 +128,7 @@ Mesh AnimatedModel::processMesh(aiMesh* mesh, const aiScene* scene)
     vector.z = mesh->mNormals[i].z;
     vertex.Normal = vector;
 
-    if (mesh->mTextureCoords[0])
-    {
+    if (mesh->mTextureCoords[0]) {
       glm::vec2 vec;
       vec.x = mesh->mTextureCoords[0][i].x;
       vec.y = mesh->mTextureCoords[0][i].y;
@@ -151,67 +137,55 @@ Mesh AnimatedModel::processMesh(aiMesh* mesh, const aiScene* scene)
       vertex.TexCoords = glm::vec2(0.f, 0.f);
     }
 
-    for (int j = 0; j < 4; j++)
-    {
+    for (int j = 0; j < 4; j++) {
       vertex.BoneIds[j] = -1;
       vertex.Weights[j] = 0;
     }
     vertices.push_back(vertex);
   }
 
-  for (unsigned int i = 0; i < mesh->mNumFaces; i++)
-  {
+  for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
     aiFace face = mesh->mFaces[i];
     for (unsigned int j = 0; j < face.mNumIndices; j++)
       indices.push_back(face.mIndices[j]);
   }
 
-  if (mesh->mMaterialIndex >= 0)
-  {
-    aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-    std::vector<Texture> diffuseMaps = loadMaterialTextures(material,
-        aiTextureType_DIFFUSE, "texture_diffuse");
+  if (mesh->mMaterialIndex >= 0) {
+    aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
+    std::vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
     textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-    std::vector<Texture> specularMaps = loadMaterialTextures(material,
-        aiTextureType_SPECULAR, "texture_specular");
+    std::vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
     textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
   }
 
   return Mesh(vertices, indices, textures);
 }
 
-void AnimatedModel::processBones(std::vector<Vertex>& vertices,
-    aiMesh* mesh, const aiScene* scene, aiNode* node)
-{
+void AnimatedModel::processBones(std::vector<Vertex> &vertices, aiMesh *mesh, const aiScene *scene, aiNode *node) {
 
-  for (unsigned int bi = 0; bi < mesh->mNumBones; ++bi)
-  {
+  for (unsigned int bi = 0; bi < mesh->mNumBones; ++bi) {
     // find node for transform????
-    const char* boneName = mesh->mBones[bi]->mName.C_Str();
-    if (!boneMap.count(bi))
-    {
+    const char *boneName = mesh->mBones[bi]->mName.C_Str();
+    if (!boneMap.count(bi)) {
       Bone bone;
       boneMap[bi] = bone;
       boneMap[bi].ID = bi;
       boneMap[bi].Name = boneName;
       boneMap[bi].Offset = AssimpGLMHelpers::ConvertMatrixToGLMFormat(mesh->mBones[bi]->mOffsetMatrix);
     }
- 
-    if (!namedBoneMap.count(boneMap[bi].Name))
-    {
+
+    if (!namedBoneMap.count(boneMap[bi].Name)) {
       namedBoneMap[boneMap[bi].Name] = bi;
     }
 
     int weightSum = 0;
 
-    for (unsigned int w = 0; w < mesh->mBones[bi]->mNumWeights; ++w)
-    {
+    for (unsigned int w = 0; w < mesh->mBones[bi]->mNumWeights; ++w) {
       weightSum += mesh->mBones[bi]->mWeights[w].mWeight;
       int vertId = mesh->mBones[bi]->mWeights[w].mVertexId;
       float weight = mesh->mBones[bi]->mWeights[w].mWeight;
-      if (vertId >= vertices.size())
-      {
+      if (vertId >= vertices.size()) {
       }
       for (int i = 0; i < 4; ++i) {
         if (vertices[vertId].BoneIds[i] < 0) {
@@ -221,39 +195,33 @@ void AnimatedModel::processBones(std::vector<Vertex>& vertices,
         }
       }
       glm::mat4 offsetMatrix = AssimpGLMHelpers::ConvertMatrixToGLMFormat(mesh->mBones[bi]->mOffsetMatrix);
-      if (bi < 100)
-      {
+      if (bi < 100) {
         boneMatrices[bi] = offsetMatrix;
       }
     }
   }
 }
 
-void AnimatedModel::addAnimationData(const aiScene* scene)
-{
-  for (int a = 0; a < scene->mNumAnimations; ++a)
-  {
+void AnimatedModel::addAnimationData(const aiScene *scene) {
+  for (int a = 0; a < scene->mNumAnimations; ++a) {
     int animID = a;
     std::string animName = scene->mAnimations[a]->mName.C_Str();
-    if (!animationMap.count(animID))
-    {
+    if (!animationMap.count(animID)) {
       AnimationMetaData animMD;
       animMD.AnimDuration = scene->mAnimations[a]->mDuration;
       animMD.ticksPerSecond = scene->mAnimations[a]->mTicksPerSecond;
       animationMap[animID] = animMD;
-      //std::cout << "Adding animation: " << animName << ", ID: " << animID << "\n";
-      if (animID == 0)
-      {
+      //      std::cout << "Adding animation: " << animName << ", ID: " << animID << "\n";
+      //      std::cout << "Animation TPS" << animMD.ticksPerSecond << "\n";
+      if (animID == 0) {
       }
-    } 
+    }
     // Channels are bones, basically.
-    for (int b = 0; b < scene->mAnimations[a]->mNumChannels; ++b)
-    {
+    for (int b = 0; b < scene->mAnimations[a]->mNumChannels; ++b) {
       // find our bone, to add an animation object
       std::string boneName = scene->mAnimations[a]->mChannels[b]->mNodeName.C_Str();
-      if (!namedBoneMap.count(boneName))
-      {
-        //std::cout << "Bone not found for animation channel?\n";
+      if (!namedBoneMap.count(boneName)) {
+        // std::cout << "Bone not found for animation channel?\n";
         continue;
       }
       Animation anim;
@@ -262,23 +230,20 @@ void AnimatedModel::addAnimationData(const aiScene* scene)
       anim.ticksPerSecond = scene->mAnimations[a]->mTicksPerSecond;
       anim.AnimDuration = scene->mAnimations[a]->mDuration;
 
-      if (!boneMap.count(namedBoneMap[boneName]))
-      {
-        //std::cout << "Bone not found in boneMap (id -> bone)\n";
+      if (!boneMap.count(namedBoneMap[boneName])) {
+        // std::cout << "Bone not found in boneMap (id -> bone)\n";
         return;
-      } 
+      }
       boneMap[namedBoneMap[boneName]].AnimationData.push_back(anim);
 
-      for (unsigned int rk = 0; rk < scene->mAnimations[a]->mChannels[b]->mNumRotationKeys; ++rk)
-      {
+      for (unsigned int rk = 0; rk < scene->mAnimations[a]->mChannels[b]->mNumRotationKeys; ++rk) {
         RotationKeyFrame rotKey;
         rotKey.timeStamp = scene->mAnimations[a]->mChannels[b]->mRotationKeys[rk].mTime;
         rotKey.rot = AssimpGLMHelpers::GetGLMQuat(scene->mAnimations[a]->mChannels[b]->mRotationKeys[rk].mValue);
         boneMap[namedBoneMap[boneName]].AnimationData[a].rotKeyFrames.push_back(rotKey);
       }
 
-      for (unsigned int pk = 0; pk < scene->mAnimations[a]->mChannels[b]->mNumPositionKeys; ++pk)
-      {
+      for (unsigned int pk = 0; pk < scene->mAnimations[a]->mChannels[b]->mNumPositionKeys; ++pk) {
         PositionKeyFrame posKey;
         posKey.timeStamp = scene->mAnimations[a]->mChannels[b]->mPositionKeys[pk].mTime;
         glm::vec3 posVec3 = AssimpGLMHelpers::GetGLMVec(scene->mAnimations[a]->mChannels[b]->mPositionKeys[pk].mValue);
@@ -286,38 +251,31 @@ void AnimatedModel::addAnimationData(const aiScene* scene)
         boneMap[namedBoneMap[boneName]].AnimationData[a].posKeyFrames.push_back(posKey);
       }
 
-      for (unsigned int sk = 0; sk < scene->mAnimations[a]->mChannels[b]->mNumScalingKeys; ++sk)
-      {
+      for (unsigned int sk = 0; sk < scene->mAnimations[a]->mChannels[b]->mNumScalingKeys; ++sk) {
         ScaleKeyFrame scaleKey;
         scaleKey.timeStamp = scene->mAnimations[a]->mChannels[b]->mScalingKeys[sk].mTime;
         glm::vec3 scaleVec3 = AssimpGLMHelpers::GetGLMVec(scene->mAnimations[a]->mChannels[b]->mScalingKeys[sk].mValue);
         scaleKey.scale = scaleVec3;
         boneMap[namedBoneMap[boneName]].AnimationData[a].scaleKeyFrames.push_back(scaleKey);
       }
-
     }
   }
 }
 
-std::vector<Texture> AnimatedModel::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
-{
+std::vector<Texture> AnimatedModel::loadMaterialTextures(aiMaterial *mat, aiTextureType type, std::string typeName) {
   std::vector<Texture> textures;
-  for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
-  {
+  for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
     aiString str;
     mat->GetTexture(type, i, &str);
     bool skip = false;
-    for (unsigned int j = 0; j < textures_loaded.size(); j++)
-    {
-      if (std::strcmp(textures_loaded[j].path.data(), str.C_Str()) == 0)
-      {
+    for (unsigned int j = 0; j < textures_loaded.size(); j++) {
+      if (std::strcmp(textures_loaded[j].path.data(), str.C_Str()) == 0) {
         textures.push_back(textures_loaded[j]);
         skip = true;
         break;
       }
     }
-    if (!skip)
-    {
+    if (!skip) {
       Texture texture;
       texture.id = TextureFromFile(str.C_Str(), directory);
       texture.type = typeName;
@@ -329,108 +287,103 @@ std::vector<Texture> AnimatedModel::loadMaterialTextures(aiMaterial* mat, aiText
   return textures;
 }
 
-unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma)
-{
+unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma) {
   std::string filename = std::string(path);
-    filename = directory + '/' + filename;
+  filename = directory + '/' + filename;
 
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
+  unsigned int textureID;
+  glGenTextures(1, &textureID);
 
-    int width, height, nrComponents;
-    unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
-    if (data)
-    {
-        GLenum format;
-        GLenum format2;
-        if (nrComponents == 1)
-        {
-            format = GL_RED;
-            format2 = GL_RED;
-        }
-        else if (nrComponents == 3) 
-        {
-            format2 = GL_RGB;
-            format = GL_SRGB;
-        }
-        else if (nrComponents == 4)
-        {
-            format2 = GL_RGBA;
-            format = GL_SRGB_ALPHA;
-        }
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format2, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-    }
-    else
-    {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
+  int width, height, nrComponents;
+  unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+  if (data) {
+    GLenum format;
+    GLenum format2;
+    if (nrComponents == 1) {
+      format = GL_RED;
+      format2 = GL_RED;
+    } else if (nrComponents == 3) {
+      format2 = GL_RGB;
+      format = GL_SRGB;
+    } else if (nrComponents == 4) {
+      format2 = GL_RGBA;
+      format = GL_SRGB_ALPHA;
     }
 
-    return textureID;
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format2, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_image_free(data);
+  } else {
+    std::cout << "Texture failed to load at path: " << path << std::endl;
+    stbi_image_free(data);
+  }
+
+  return textureID;
 }
 
-void AnimatedModel::Render(glm::vec3 pos, Shader* shader, Camera* camera)
-{
+void AnimatedModel::Render(glm::vec3 pos, Shader *shader, Camera *camera) {
   glm::mat4 model = glm::mat4(1.f);
   model = glm::translate(model, position);
   model = model * rotation;
   glm::mat4 rot = glm::lookAt(position, modelDir, modelUp);
-  //model = model * rot;
-  for (unsigned int i = 0; i < meshes.size(); i++)
-  {
-    meshes[i].Render(model, shader, camera, 0);
+  // model = model * rot;
+  LightData lData;
+  for (unsigned int i = 0; i < meshes.size(); i++) {
+    meshes[i].Render(model, shader, camera, &lData, 0);
   }
 }
 
-void AnimatedModel::PlayAnimation(int animIndex)
-{
-  //Reset animation time
+void AnimatedModel::RenderBasic() {
+  for (unsigned int i = 0; i < meshes.size(); ++i) {
+    meshes[i].RenderBasic();
+  }
+}
+
+void AnimatedModel::Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex) {
+
+  LightData lData;
+  for (unsigned int i = 0; i < meshes.size(); i++) {
+    meshes[i].Render(transform, shader, camera, &lData, shadowTex);
+  }
+}
+
+void AnimatedModel::PlayAnimation(int animIndex) {
+  // Reset animation time
   animTime = 0.f;
   currentAnimationIndex = animIndex;
 }
 
-void AnimatedModel::StopAnimation()
-{
+void AnimatedModel::StopAnimation() {
   animTime = 0.f;
   currentAnimationIndex = -1;
 }
 
-bool AnimatedModel::IsPlayingAnimation()
-{
-  return currentAnimationIndex > -1;
-}
+bool AnimatedModel::IsPlayingAnimation() { return currentAnimationIndex > -1; }
 
-void AnimatedModel::UpdateAnimation(float dt)
-{
-  if (currentAnimationIndex == -1)
-  {
+void AnimatedModel::UpdateAnimation(float dt) {
+
+  if (currentAnimationIndex == -1) {
     animTime = 0.f;
     // No animation is playing, early return
     return;
   }
 
   this->animTime += animationMap[currentAnimationIndex].ticksPerSecond * dt;
-  if (this->animTime >= animationMap[currentAnimationIndex].AnimDuration)
-  {
-    if (!looping)
-    {
+  if (this->animTime >= animationMap[currentAnimationIndex].AnimDuration) {
+    if (!looping) {
       currentAnimationIndex = -1;
       return;
     }
   }
-  //this->animTime += 12 * dt;
-  if (!animationMap.count(currentAnimationIndex))
-  {
+  // this->animTime += 12 * dt;
+  if (!animationMap.count(currentAnimationIndex)) {
     std::cout << "Animation meta data not found for index: " << currentAnimationIndex << "\n";
     return;
   }
@@ -438,17 +391,14 @@ void AnimatedModel::UpdateAnimation(float dt)
   calcAnimTransform(rootBone, glm::mat4(1.f));
 }
 
-void AnimatedModel::calcAnimTransform(Bone* bone, glm::mat4 transform)
-{
+void AnimatedModel::calcAnimTransform(Bone *bone, glm::mat4 transform) {
   // maybe need to take into account transforms other than bones? Don't think so. Just a note.
 
   glm::mat4 translation = interpPos(bone);
   glm::mat4 rotation = interpRot(bone);
   glm::mat4 scale = interpScale(bone);
-  for (BoneRotation boneRot : boneRotations)
-  {
-    if (bone->Name == boneRot.BoneName)
-    {
+  for (BoneRotation boneRot : boneRotations) {
+    if (bone->Name == boneRot.BoneName) {
       glm::mat4 addRot = glm::mat4(1.f);
       addRot = glm::rotate(addRot, glm::radians(boneRot.Angle), boneRot.Axis);
       rotation *= addRot;
@@ -456,56 +406,45 @@ void AnimatedModel::calcAnimTransform(Bone* bone, glm::mat4 transform)
   }
   glm::mat4 interpedTransform = translation * rotation * scale;
   glm::mat4 globalTransform = transform * interpedTransform;
-  if (bone->ID >= boneMatrices.size())
-  {
-    std::cout<< "Bone id out of range of bone matrices: " << bone->ID << ", " << "matrices count: " << boneMatrices.size() << "\n";
+  if (bone->ID >= boneMatrices.size()) {
+    std::cout << "Bone id out of range of bone matrices: " << bone->ID << ", " << "matrices count: " << boneMatrices.size() << "\n";
     return;
   }
- 
+
   boneMatrices[bone->ID] = globalInverseMat4 * globalTransform * bone->Offset;
-  for (int i = 0; i < bone->Children.size(); ++i)
-  {
+  for (int i = 0; i < bone->Children.size(); ++i) {
     calcAnimTransform(bone->Children[i], globalTransform);
   }
 }
 
-void AnimatedModel::SetBoneMatricesUnif(Shader* shader)
-{
-  for (int index = 0; index < boneMatrices.size(); ++index)
-  {
+void AnimatedModel::SetBoneMatricesUnif(Shader *shader) {
+  for (int index = 0; index < boneMatrices.size(); ++index) {
     shader->setMat4("finalBonesMatrices[" + std::to_string(index) + "]", boneMatrices[index], 1);
   }
 }
 
-void AnimatedModel::calcInverseTransform(Bone* bone, glm::mat4 parentTransform)
-{
+void AnimatedModel::calcInverseTransform(Bone *bone, glm::mat4 parentTransform) {
   glm::mat4 transform = parentTransform * bone->LocalTransform;
   bone->InvTransform = transform;
-  for (Bone* child : bone->Children)
-  {
+  for (Bone *child : bone->Children) {
     calcInverseTransform(child, transform);
   }
 }
 
 // Probably move this out of the animatedModel class eventually, lets just get things working for now
-float AnimatedModel::getInterpDelta(float prevFrameTime, float nextFrameTime)
-{
+float AnimatedModel::getInterpDelta(float prevFrameTime, float nextFrameTime) {
   float halfPoint = animTime - prevFrameTime;
   float diff = nextFrameTime - prevFrameTime;
   float delta = halfPoint / diff;
   return delta;
 }
 
-int AnimatedModel::getCurrentPosFrameIndex(Bone* bone)
-{
-  if (currentAnimationIndex < 0)
-  {
+int AnimatedModel::getCurrentPosFrameIndex(Bone *bone) {
+  if (currentAnimationIndex < 0) {
     return 0;
   }
-  for (int i = 0; i < bone->AnimationData[currentAnimationIndex].posKeyFrames.size() - 1; ++i)
-  {
-    if (animTime < bone->AnimationData[currentAnimationIndex].posKeyFrames[i + 1].timeStamp)
-    {
+  for (int i = 0; i < bone->AnimationData[currentAnimationIndex].posKeyFrames.size() - 1; ++i) {
+    if (animTime < bone->AnimationData[currentAnimationIndex].posKeyFrames[i + 1].timeStamp) {
       return i;
     }
   }
@@ -513,17 +452,13 @@ int AnimatedModel::getCurrentPosFrameIndex(Bone* bone)
   return 0;
 }
 
-int AnimatedModel::getCurrentScaleFrameIndex(Bone* bone)
-{
-  if (currentAnimationIndex < 0)
-  {
+int AnimatedModel::getCurrentScaleFrameIndex(Bone *bone) {
+  if (currentAnimationIndex < 0) {
     return 0;
   }
- 
-  for (int i = 0; i < bone->AnimationData[currentAnimationIndex].scaleKeyFrames.size() - 1; ++i)
-  {
-    if (animTime < bone->AnimationData[currentAnimationIndex].scaleKeyFrames[i + 1].timeStamp)
-    {
+
+  for (int i = 0; i < bone->AnimationData[currentAnimationIndex].scaleKeyFrames.size() - 1; ++i) {
+    if (animTime < bone->AnimationData[currentAnimationIndex].scaleKeyFrames[i + 1].timeStamp) {
       return i;
     }
   }
@@ -531,17 +466,13 @@ int AnimatedModel::getCurrentScaleFrameIndex(Bone* bone)
   return 0;
 }
 
-int AnimatedModel::getCurrentRotFrameIndex(Bone* bone)
-{
-  if (currentAnimationIndex < 0)
-  {
+int AnimatedModel::getCurrentRotFrameIndex(Bone *bone) {
+  if (currentAnimationIndex < 0) {
     return 0;
   }
 
-  for (int i = 0; i < bone->AnimationData[currentAnimationIndex].rotKeyFrames.size() - 1; ++i)
-  {
-    if (animTime < bone->AnimationData[currentAnimationIndex].rotKeyFrames[i + 1].timeStamp)
-    {
+  for (int i = 0; i < bone->AnimationData[currentAnimationIndex].rotKeyFrames.size() - 1; ++i) {
+    if (animTime < bone->AnimationData[currentAnimationIndex].rotKeyFrames[i + 1].timeStamp) {
       return i;
     }
   }
@@ -549,73 +480,58 @@ int AnimatedModel::getCurrentRotFrameIndex(Bone* bone)
   return 0;
 }
 
-glm::mat4 AnimatedModel::interpPos(Bone* bone)
-{
-  if (bone->AnimationData[currentAnimationIndex].posKeyFrames.size() == 1)
-  {
+glm::mat4 AnimatedModel::interpPos(Bone *bone) {
+  if (bone->AnimationData[currentAnimationIndex].posKeyFrames.size() == 1) {
     return glm::translate(glm::mat4(1.f), bone->AnimationData[currentAnimationIndex].posKeyFrames[0].pos);
   }
 
   int animIndex = getCurrentPosFrameIndex(bone);
-  if (animIndex == bone->AnimationData[currentAnimationIndex].posKeyFrames.size() - 1)
-  {
+  if (animIndex == bone->AnimationData[currentAnimationIndex].posKeyFrames.size() - 1) {
     // I don't think this can actually happen? But just in case.
     return glm::translate(glm::mat4(1.f), bone->AnimationData[currentAnimationIndex].posKeyFrames[animIndex].pos);
   }
 
-  float interpDelta = getInterpDelta(bone->AnimationData[currentAnimationIndex].posKeyFrames[animIndex].timeStamp, 
-      bone->AnimationData[currentAnimationIndex].posKeyFrames[animIndex + 1].timeStamp);
-  glm::vec3 interpedPos = glm::mix(
-      bone->AnimationData[currentAnimationIndex].posKeyFrames[animIndex].pos,
-      bone->AnimationData[currentAnimationIndex].posKeyFrames[animIndex + 1].pos,
-      interpDelta);
+  float interpDelta = getInterpDelta(bone->AnimationData[currentAnimationIndex].posKeyFrames[animIndex].timeStamp,
+                                     bone->AnimationData[currentAnimationIndex].posKeyFrames[animIndex + 1].timeStamp);
+  glm::vec3 interpedPos = glm::mix(bone->AnimationData[currentAnimationIndex].posKeyFrames[animIndex].pos,
+                                   bone->AnimationData[currentAnimationIndex].posKeyFrames[animIndex + 1].pos, interpDelta);
   return glm::translate(glm::mat4(1.f), interpedPos);
 }
 
-glm::mat4 AnimatedModel::interpScale(Bone* bone)
-{
-  if (bone->AnimationData[currentAnimationIndex].scaleKeyFrames.size() == 1)
-  {
+glm::mat4 AnimatedModel::interpScale(Bone *bone) {
+  if (bone->AnimationData[currentAnimationIndex].scaleKeyFrames.size() == 1) {
     return glm::translate(glm::mat4(1.f), bone->AnimationData[currentAnimationIndex].scaleKeyFrames[0].scale);
   }
 
   int animIndex = getCurrentScaleFrameIndex(bone);
-  if (animIndex == bone->AnimationData[currentAnimationIndex].scaleKeyFrames.size() - 1)
-  {
+  if (animIndex == bone->AnimationData[currentAnimationIndex].scaleKeyFrames.size() - 1) {
     // I don't think this can actually happen? But just in case.
     return glm::translate(glm::mat4(1.f), bone->AnimationData[currentAnimationIndex].scaleKeyFrames[animIndex].scale);
   }
 
-  float interpDelta = getInterpDelta(bone->AnimationData[currentAnimationIndex].scaleKeyFrames[animIndex].timeStamp, 
-      bone->AnimationData[currentAnimationIndex].scaleKeyFrames[animIndex + 1].timeStamp);
+  float interpDelta = getInterpDelta(bone->AnimationData[currentAnimationIndex].scaleKeyFrames[animIndex].timeStamp,
+                                     bone->AnimationData[currentAnimationIndex].scaleKeyFrames[animIndex + 1].timeStamp);
 
-  glm::vec3 interpedScale = glm::mix(
-      bone->AnimationData[currentAnimationIndex].scaleKeyFrames[animIndex].scale,
-      bone->AnimationData[currentAnimationIndex].scaleKeyFrames[animIndex + 1].scale,
-      interpDelta);
+  glm::vec3 interpedScale = glm::mix(bone->AnimationData[currentAnimationIndex].scaleKeyFrames[animIndex].scale,
+                                     bone->AnimationData[currentAnimationIndex].scaleKeyFrames[animIndex + 1].scale, interpDelta);
   return glm::scale(glm::mat4(1.f), interpedScale);
 }
 
-glm::mat4 AnimatedModel::interpRot(Bone* bone)
-{
-  if (bone->AnimationData[currentAnimationIndex].rotKeyFrames.size() == 1)
-  {
+glm::mat4 AnimatedModel::interpRot(Bone *bone) {
+  if (bone->AnimationData[currentAnimationIndex].rotKeyFrames.size() == 1) {
     return glm::toMat4(glm::normalize(bone->AnimationData[currentAnimationIndex].rotKeyFrames[0].rot));
   }
 
   int animIndex = getCurrentRotFrameIndex(bone);
-  if (animIndex == bone->AnimationData[currentAnimationIndex].rotKeyFrames.size() - 1)
-  {
+  if (animIndex == bone->AnimationData[currentAnimationIndex].rotKeyFrames.size() - 1) {
     // I don't think this can actually happen? But just in case.
     return glm::toMat4(glm::normalize(bone->AnimationData[currentAnimationIndex].rotKeyFrames[animIndex].rot));
   }
 
- float interpDelta = getInterpDelta(bone->AnimationData[currentAnimationIndex].rotKeyFrames[animIndex].timeStamp, 
-    bone->AnimationData[currentAnimationIndex].rotKeyFrames[animIndex + 1].timeStamp);
-  glm::quat slerpedQuat = glm::slerp(
-      bone->AnimationData[currentAnimationIndex].rotKeyFrames[animIndex].rot,
-      bone->AnimationData[currentAnimationIndex].rotKeyFrames[animIndex + 1].rot,
-      interpDelta);
+  float interpDelta = getInterpDelta(bone->AnimationData[currentAnimationIndex].rotKeyFrames[animIndex].timeStamp,
+                                     bone->AnimationData[currentAnimationIndex].rotKeyFrames[animIndex + 1].timeStamp);
+  glm::quat slerpedQuat = glm::slerp(bone->AnimationData[currentAnimationIndex].rotKeyFrames[animIndex].rot,
+                                     bone->AnimationData[currentAnimationIndex].rotKeyFrames[animIndex + 1].rot, interpDelta);
   slerpedQuat = glm::normalize(slerpedQuat);
   return glm::toMat4(slerpedQuat);
 }

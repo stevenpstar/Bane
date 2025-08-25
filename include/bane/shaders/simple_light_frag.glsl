@@ -29,7 +29,9 @@ uniform sampler2D shadowMap;
 uniform samplerCube reflectionMap;
 
 uniform vec3 lightPos;
+uniform float ambientStrength;
 uniform vec3 viewPos;
+uniform vec3 objectColour;
 uniform bool lightRim;
 uniform bool reflective;
 #define NR_POINT_LIGHTS 2
@@ -47,10 +49,11 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
     vec3 normal = normalize(fs_in.Normal);
-    vec3 lightDir = normalize(lightPos - fs_in.FragPos);
+    vec3 lightDir = normalize(fs_in.FragPos - lightPos);
     //float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-    float bias = 0.002;
+    float bias = 0.000;
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
+ //   float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
 
     if(projCoords.z > 1.0)
         shadow = 0.0;
@@ -84,12 +87,12 @@ vec3 CalculatePointLight(PointLight light, vec3 norm, vec3 FragPos, vec3 viewDir
 void main()
 {           
     float reflectionAmount = 0.1;
-    vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
+    vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb * objectColour;
     vec3 normal = normalize(fs_in.Normal);
     vec3 viewNorm = normalize(fs_in.viewNormal);
-    vec3 lightColor = vec3(0.3);
+    vec3 lightColor = vec3(1.0);
     // ambient
-    vec3 ambient = 0.1 * lightColor;
+    vec3 ambient = ambientStrength * lightColor;
     // diffuse
     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
     float diff = max(dot(lightDir, normal), 0.0);
@@ -105,7 +108,7 @@ void main()
     float shadow = ShadowCalculation(fs_in.FragPosLightSpace);   
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
     {
-      diffuse += CalculatePointLight(pointLights[i], normal, fs_in.FragPos, viewDir, pointLights[i].intensity);
+    //  diffuse += CalculatePointLight(pointLights[i], normal, fs_in.FragPos, viewDir, pointLights[i].intensity);
       //diffuse += vec3(1.0, 0.0, 0.0);
     }
 

@@ -10,6 +10,7 @@ add_library(${PROJECT_NAME}
   src/components/bobject.cpp
   src/components/staticmesh.cpp
   src/components/character.cpp
+  src/scene/sceneLoader.cpp
   src/utility/shader.cpp
   src/utility/ray.cpp
   src/utility/AABB.cpp
@@ -21,6 +22,8 @@ add_library(${PROJECT_NAME}
   src/primitives/animatedModel.cpp
   src/primitives/texture.cpp
   src/primitives/skybox.cpp
+  src/primitives/pointLight.cpp
+  src/primitives/material.cpp
   src/glad.c
   src/stb_image.c
   )

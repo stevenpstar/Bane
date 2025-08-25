@@ -1,13 +1,13 @@
 #include "glm/ext/matrix_transform.hpp"
 #include <bane/components/bobject.hpp>
+#include <bane/components/camera.hpp>
+#include <bane/utility/AABB.hpp>
+#include <bane/utility/shader.hpp>
+#include <glad/glad.h>
 #include <glm/fwd.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <bane/components/camera.hpp>
-#include <bane/utility/shader.hpp>
-#include <bane/utility/AABB.hpp>
-#include <glad/glad.h>
 
-AABB::AABB(glm::vec3 origin, float xdim, float ydim, float zdim, Bobject* owner) {
+AABB::AABB(glm::vec3 origin, float xdim, float ydim, float zdim, Bobject *owner) {
   this->origin = origin;
   this->xdim = xdim;
   this->ydim = ydim;
@@ -17,52 +17,20 @@ AABB::AABB(glm::vec3 origin, float xdim, float ydim, float zdim, Bobject* owner)
   setupAABB();
 }
 
-void AABB::setupAABB()
-{
+void AABB::setupAABB() {
   // 108
   float vertices[] = {
-    -0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f, -0.5f,
-    -0.5f,  0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
+      -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f,
 
-    -0.5f, -0.5f,  0.5f,
-     0.5f, -0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-    -0.5f, -0.5f,  0.5f,
+      -0.5f, -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, -0.5f, 0.5f,
 
-    -0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
+      -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,
 
-     0.5f,  0.5f,  0.5f,
-     0.5f,  0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
+      0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,
 
-    -0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f,  0.5f,
-     0.5f, -0.5f,  0.5f,
-    -0.5f, -0.5f,  0.5f,
-    -0.5f, -0.5f, -0.5f,
+      -0.5f, -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f, -0.5f, 0.5f,  -0.5f, -0.5f, -0.5f,
 
-    -0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f, -0.5f
-};
+      -0.5f, 0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  0.5f,  -0.5f, 0.5f,  0.5f,  -0.5f, 0.5f,  -0.5f};
   glGenVertexArrays(1, &VAO);
   glGenBuffers(1, &VBO);
 
@@ -71,13 +39,12 @@ void AABB::setupAABB()
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
 
   glBindVertexArray(0);
 }
 
-void AABB::render(Camera* camera, Shader* shader)
-{
+void AABB::render(Camera *camera, Shader *shader) {
   shader->use();
 
   glm::mat4 model = glm::mat4(1.f);
@@ -96,8 +63,7 @@ void AABB::render(Camera* camera, Shader* shader)
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-bool AABB::isColliding(AABB* aabb)
-{
+bool AABB::isColliding(AABB *aabb) {
   float xmin = AABB_getMinX(this);
   float xmax = AABB_getMaxX(this);
   float ymin = AABB_getMinY(this);
@@ -112,41 +78,20 @@ bool AABB::isColliding(AABB* aabb)
   float b_zmin = AABB_getMinZ(aabb);
   float b_zmax = AABB_getMaxZ(aabb);
 
-  return xmin <= b_xmax &&
-    xmax >= b_xmin &&
-    ymin <= b_ymax &&
-    ymax >= b_ymin &&
-    zmin <= b_zmax &&
-    zmax >= b_zmin;
+  return xmin <= b_xmax && xmax >= b_xmin && ymin <= b_ymax && ymax >= b_ymin && zmin <= b_zmax && zmax >= b_zmin;
 }
 
-float AABB_getMinX(AABB* aabb)
-{
+float AABB_getMinX(AABB *aabb) {
   float minx = aabb->origin.x - aabb->xdim / 2.f;
   return minx;
 }
-float AABB_getMaxX(AABB* aabb)
-{
+float AABB_getMaxX(AABB *aabb) {
   float maxx = aabb->origin.x + aabb->xdim / 2.f;
   return maxx;
 }
 
-float AABB_getMinY(AABB* aabb)
-{
-  return aabb->origin.y - aabb->ydim / 2.f;
-}
-float AABB_getMaxY(AABB* aabb)
-{
-  return aabb->origin.y + aabb->ydim / 2.f;
-}
+float AABB_getMinY(AABB *aabb) { return aabb->origin.y - aabb->ydim / 2.f; }
+float AABB_getMaxY(AABB *aabb) { return aabb->origin.y + aabb->ydim / 2.f; }
 
-float AABB_getMinZ(AABB* aabb)
-{
-  return aabb->origin.z - aabb->zdim / 2.f;
-}
-float AABB_getMaxZ(AABB* aabb)
-{
-  return aabb->origin.z + aabb->zdim / 2.f;
-}
-
-
+float AABB_getMinZ(AABB *aabb) { return aabb->origin.z - aabb->zdim / 2.f; }
+float AABB_getMaxZ(AABB *aabb) { return aabb->origin.z + aabb->zdim / 2.f; }
