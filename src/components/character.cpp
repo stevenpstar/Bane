@@ -5,7 +5,8 @@
 #include <bane/utility/shader.hpp>
 #include <glm/ext/vector_float3.hpp>
 Character::Character(const char *modelPath, Shader *shader)
-    : Bobject(modelPath, 0), model(modelPath, glm::vec3(0.f, 0.f, 0.f)), collisionBox(glm::vec3(0.f, 0.f, 0.f), 1.f, 1.f, 1.f, this) {
+    : Bobject(modelPath, 0), model(modelPath, glm::vec3(0.f, 0.f, 0.f)),
+      collisionBox(glm::vec3(0.f, 0.f, 0.f), 1.f, 1.f, 1.f, this, "") {
   // AnimatedModel model = AnimatedModel(modelPath, glm::vec3(0.f, 0.f, 0.f));
   this->shader = shader;
   randomColour = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);

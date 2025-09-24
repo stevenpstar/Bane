@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 Bobject::Bobject(std::string objName, int id)
-    : name(objName), id(id), editorCollision(AABB(glm::vec3(0.f, 0.f, 0.f), 2.f, 2.f, 2.f, this)) {}
+    : name(objName), id(id), editorCollision(AABB(glm::vec3(0.f, 0.f, 0.f), 2.f, 2.f, 2.f, this, objName)) {}
 void Bobject::Render(Camera *camera) {}
 void Bobject::Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex) {}
 void Bobject::RenderBasic() {}

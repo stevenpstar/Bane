@@ -74,6 +74,8 @@ public:
   glm::vec3 modelRight;
   glm::vec3 modelTarget;
   //
+  //
+  std::string name;
 
   std::vector<BoneRotation> boneRotations;
 

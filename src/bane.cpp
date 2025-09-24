@@ -128,7 +128,10 @@ SDL_Window *CreateWindow() {
 
   glEnable(GL_BLEND);
   glEnable(GL_FRAMEBUFFER_SRGB);
+  glEnable(GL_STENCIL_TEST);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
   return window;
 }
@@ -144,7 +147,9 @@ void Poll() {
 
 void ClearColour() {
   glClearColor(0.02f, 0.02f, 0.02f, 1.f);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+  glStencilMask(0x00);
 }
 
 void SwapBuffer(SDL_Window *w) {

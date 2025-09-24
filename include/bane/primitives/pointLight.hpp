@@ -1,5 +1,6 @@
 #ifndef BANE_POINT_LIGHT
 #define BANE_POINT_LIGHT
+#include "bane/utility/AABB.hpp"
 #include <glm/glm.hpp>
 class Shader;
 static const float PointLightLinear = 0.09f;

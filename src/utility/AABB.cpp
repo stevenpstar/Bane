@@ -6,13 +6,15 @@
 #include <glad/glad.h>
 #include <glm/fwd.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <string>
 
-AABB::AABB(glm::vec3 origin, float xdim, float ydim, float zdim, Bobject *owner) {
+AABB::AABB(glm::vec3 origin, float xdim, float ydim, float zdim, Bobject *owner, std::string name) {
   this->origin = origin;
   this->xdim = xdim;
   this->ydim = ydim;
   this->zdim = zdim;
   this->owner = owner;
+  this->name = name;
 
   setupAABB();
 }

@@ -2,12 +2,13 @@
 #define BANE_TEXTURE
 #include <string>
 struct Texture {
-  unsigned int id;
-  std::string type;
+  std::string name;
   std::string path;
+  std::string type;
+  unsigned int id;
 };
 
-unsigned int createTexture(const char* path);
-unsigned int createSkyBoxTexture(const char* folder);
+unsigned int createTexture(const char *path);
+unsigned int createSkyBoxTexture(const char *folder);
 
 #endif

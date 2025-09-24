@@ -20,6 +20,7 @@ public:
   glm::vec3 rotation;
   glm::vec3 scale;
   glm::vec3 tint;
+  std::string name;
   void Render(Shader *shader, Camera *camera);
   void Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex);
   void RenderBasic();

@@ -108,7 +108,9 @@ void main()
     float shadow = ShadowCalculation(fs_in.FragPosLightSpace);   
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
     {
-    //  diffuse += CalculatePointLight(pointLights[i], normal, fs_in.FragPos, viewDir, pointLights[i].intensity);
+     // if (pointLights[i]) {
+        diffuse += CalculatePointLight(pointLights[i], normal, fs_in.FragPos, viewDir, pointLights[i].intensity);
+      //}
       //diffuse += vec3(1.0, 0.0, 0.0);
     }
 
