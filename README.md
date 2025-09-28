@@ -13,7 +13,7 @@ OpenGL / SDL3
 - Rim lighting/"Reflections" (optional)
 - Pixelization shader/Post processing effect
 
-![Preview Image 1](matsc.png)
+![Preview Image 1](baneeditorprogress.png)
 
 ## Games 
 
