@@ -34,6 +34,7 @@ struct ScaleKeyFrame {
 };
 
 struct AnimationMetaData {
+  std::string name;
   float AnimDuration;
   int ticksPerSecond;
 };

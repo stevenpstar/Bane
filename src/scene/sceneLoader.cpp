@@ -1,7 +1,8 @@
-#include "bane/scene/sceneModel.hpp"
 #include "glm/fwd.hpp"
 #include <bane/core/scene.hpp>
+#include <bane/scene/sceneAnimatedModel.hpp>
 #include <bane/scene/sceneLoader.hpp>
+#include <bane/scene/sceneModel.hpp>
 #include <fstream>
 #include <iostream>
 #include <json.hpp>
@@ -67,7 +68,86 @@ Scene loadScene(std::string scenePath) {
     } else {
       std::cout << "Could not load texture\n";
     }
+
+    if (sceneData["bobjects"].at(i).contains("castShadow")) {
+      sceneModel.castShadow = sceneData["bobjects"].at(i)["castShadow"];
+    } else {
+      sceneModel.castShadow = false;
+    }
     loadedScene.staticModels.push_back(sceneModel);
+  }
+
+  // load animated models/animations
+  if (sceneData.contains("animobjects")) {
+    for (int i = 0; i < sceneData["animobjects"].size(); ++i) {
+      SceneAnimatedModel sceneModel;
+      sceneModel.id = sceneData["animobjects"].at(i)["id"];
+      // std::cout << "id loaded? : " << sceneModel.id << "\n";
+      sceneModel.name = sceneData["animobjects"].at(i)["name"];
+      sceneModel.filePath = sceneData["animobjects"].at(i)["filePath"];
+      //  std::cout << "Loaded name and path\n";
+      sceneModel.position = glm::vec3(0.f, 0.f, 0.f);
+      sceneModel.position.x = sceneData["animobjects"].at(i)["xpos"];
+      sceneModel.position.y = sceneData["animobjects"].at(i)["ypos"];
+      sceneModel.position.z = sceneData["animobjects"].at(i)["zpos"];
+
+      sceneModel.rotation = glm::vec3(0.f, 0.f, 0.f);
+      if (sceneData["animobjects"].at(i).contains("xrot"))
+        sceneModel.rotation.x = sceneData["animobjects"].at(i)["xrot"];
+      if (sceneData["animobjects"].at(i).contains("yrot"))
+        sceneModel.rotation.y = sceneData["animobjects"].at(i)["yrot"];
+      if (sceneData["animobjects"].at(i).contains("zrot"))
+        sceneModel.rotation.z = sceneData["animobjects"].at(i)["zrot"];
+
+      sceneModel.scale = glm::vec3(0.f, 0.f, 0.f);
+      if (sceneData["animobjects"].at(i).contains("xscale"))
+        sceneModel.scale.x = sceneData["animobjects"].at(i)["xscale"];
+      if (sceneData["animobjects"].at(i).contains("yscale"))
+        sceneModel.scale.y = sceneData["animobjects"].at(i)["yscale"];
+      if (sceneData["animobjects"].at(i).contains("zscale"))
+        sceneModel.scale.z = sceneData["animobjects"].at(i)["zscale"];
+
+      if (sceneData["animobjects"].at(i).contains("diffuse")) {
+        sceneModel.diffuse = sceneData["animobjects"].at(i)["diffuse"];
+      } else {
+        std::cout << "Could not load texture\n";
+      }
+
+      if (sceneData["animobjects"].at(i).contains("castShadow")) {
+        sceneModel.castShadow = sceneData["animobjects"].at(i)["castShadow"];
+      } else {
+        sceneModel.castShadow = false;
+      }
+
+      if (sceneData["animobjects"].at(i).contains("playing")) {
+        sceneModel.playing = sceneData["animobjects"].at(i)["playing"];
+      } else {
+        sceneModel.playing = false;
+      }
+
+      if (sceneData["animobjects"].at(i).contains("defaultAnimation")) {
+        sceneModel.defaultAnimation = sceneData["animobjects"].at(i)["defaultAnimation"];
+      } else {
+        sceneModel.defaultAnimation = -1;
+      }
+
+      if (sceneData["animobjects"].at(i).contains("animations")) {
+        for (int j = 0; j < sceneData["animobjects"].at(i)["animations"].size(); ++i) {
+          SceneAnimation anim;
+          anim.name = "";
+          anim.loop = false;
+          anim.index = -1;
+          if (sceneData["animobjects"].at(i)["animations"].at(j).contains("name"))
+            anim.name = sceneData["animobjects"].at(i)["animations"].at(j)["name"];
+          if (sceneData["animobjects"].at(i)["animations"].at(j).contains("loop"))
+            anim.loop = sceneData["animobjects"].at(i)["animations"].at(j)["loop"];
+          if (sceneData["animobjects"].at(i)["animations"].at(j).contains("index"))
+            anim.index = sceneData["animobjects"].at(i)["animations"].at(j)["index"];
+          sceneModel.animations.emplace_back(anim);
+        }
+      }
+      loadedScene.animatedModels.push_back(sceneModel);
+    }
   }
 
   if (sceneData.contains("pointlights")) {
@@ -109,6 +189,7 @@ Scene loadScene(std::string scenePath) {
       float ydim = 1.f;
       float zdim = 1.f;
       std::string name = "";
+      int id = -1;
       if (sceneData["colliders"].at(i).contains("originx"))
         origin.x = sceneData["colliders"].at(i)["originx"];
       if (sceneData["colliders"].at(i).contains("originy"))
@@ -125,7 +206,9 @@ Scene loadScene(std::string scenePath) {
 
       if (sceneData["colliders"].at(i).contains("name"))
         name = sceneData["colliders"].at(i)["name"];
-      AABB aabb = AABB(origin, xdim, ydim, zdim, nullptr, name);
+      if (sceneData["colliders"].at(i).contains("id"))
+        id = sceneData["colliders"].at(i)["id"];
+      AABB aabb = AABB(origin, xdim, ydim, zdim, nullptr, name, id);
       loadedScene.colliders.push_back(aabb);
     }
   }

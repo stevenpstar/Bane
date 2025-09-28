@@ -15,6 +15,7 @@ public:
   std::string name;
   AABB editorCollision;
   Transform transform;
+  bool castShadow = false;
   Bobject(std::string objName, int id);
   virtual void Render(Camera *camera);
   virtual void Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex);

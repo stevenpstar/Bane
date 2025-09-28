@@ -19,6 +19,10 @@
 #include <glm/glm.hpp>
 #include <iostream>
 #include <stbimage/stb_image.h>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
+
 SDL_Window *window{nullptr};
 SDL_Surface *surface{nullptr};
 SDL_Renderer *renderer{nullptr};
@@ -56,6 +60,7 @@ void SetResizeCallback(SDL_Window *window, void (*f)(SDL_Window *, int, int)) {
 }
 
 void ResizeViewport(int width, int height) {
+  std::cout << "We are resizing viewport!\n";
   screenWidth = width;
   screenHeight = height;
   SDL_SetWindowSize(window, screenWidth, screenHeight);
@@ -159,9 +164,9 @@ void SwapBuffer(SDL_Window *w) {
 
 glm::mat4 RenderShadow(SDL_Window *window, int width, int height, glm::vec3 lightPos, Shader *shader, Camera *camera) {
   // setup orth projection
-  float near_plane = -100.f, far_plane = 10.f;
+  float near_plane = -100.f, far_plane = 100.f;
   glm::mat4 lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
-  glm::mat4 lightView = glm::lookAt(glm::vec3(0.f, 1.f, -2.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+  glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
   glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
   glEnable(GL_DEPTH_TEST);

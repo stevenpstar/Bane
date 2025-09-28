@@ -24,6 +24,7 @@ add_library(${PROJECT_NAME}
   src/primitives/skybox.cpp
   src/primitives/pointLight.cpp
   src/primitives/material.cpp
+  src/data/resource.cpp
   src/glad.c
   src/stb_image.c
   )

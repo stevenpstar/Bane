@@ -51,17 +51,17 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     vec3 normal = normalize(fs_in.Normal);
     vec3 lightDir = normalize(fs_in.FragPos - lightPos);
     //float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-    float bias = 0.000;
-    float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
+    float bias = 0.001;
+    float shadow = currentDepth - bias > closestDepth  ? 1.0 : ambientStrength;
  //   float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
 
     if(projCoords.z > 1.0)
-        shadow = 0.0;
+        shadow = ambientStrength;
 
     return shadow;
 }
 
-vec3 CalculatePointLight(PointLight light, vec3 norm, vec3 FragPos, vec3 viewDir, float intensity)
+vec3 CalculatePointLight(PointLight light, vec3 norm, vec3 FragPos, vec3 viewDir, float intensity, inout float shadow)
 {
   vec3 lightDir = normalize(light.position - FragPos);
   float diff = max(dot(norm, lightDir), 0.0);
@@ -75,6 +75,14 @@ vec3 CalculatePointLight(PointLight light, vec3 norm, vec3 FragPos, vec3 viewDir
   //vec3 ambient = light.ambient * vec3(texture(diffuseTexture, fs_in.TexCoords));
   vec3 diffuse = diff * light.diffuse * vec3(texture(diffuseTexture, fs_in.TexCoords));
   //vec3 specular = spec * light.specular * vec3(texture(specularTexture, fs_in.TexCoords));
+
+ // if (distance <= 10.0) {
+    //diffuse = vec3(1.0, 0.0, 0.0);
+    shadow -= attenuation;
+    if (shadow < 0.0) {
+      shadow = 0.0;
+    }
+  //}
 
  // ambient *= attenuation;
   diffuse *= attenuation;
@@ -94,7 +102,11 @@ void main()
     // ambient
     vec3 ambient = ambientStrength * lightColor;
     // diffuse
-    vec3 lightDir = normalize(lightPos - fs_in.FragPos);
+    vec3 alightPos = vec3(lightPos.xyz);
+//    alightPos.x *= 1000.0;
+//    alightPos.y *= 1000.0;
+//    alightPos.z *= 1000.0;
+    vec3 lightDir = normalize(alightPos - fs_in.FragPos);
     float diff = max(dot(lightDir, normal), 0.0);
     vec3 diffuse = diff * lightColor;
     // specular
@@ -109,7 +121,7 @@ void main()
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
     {
      // if (pointLights[i]) {
-        diffuse += CalculatePointLight(pointLights[i], normal, fs_in.FragPos, viewDir, pointLights[i].intensity);
+        diffuse += CalculatePointLight(pointLights[i], normal, fs_in.FragPos, viewDir, pointLights[i].intensity, shadow);
       //}
       //diffuse += vec3(1.0, 0.0, 0.0);
     }

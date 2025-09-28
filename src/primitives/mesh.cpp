@@ -108,16 +108,8 @@ void Mesh::Render(glm::vec3 pos, glm::vec3 rotation, Shader *shader, Camera *cam
 
 // Renders the mesh only, no shaders or uniforms set.
 void Mesh::RenderBasic() {
-  unsigned int error;
   glBindVertexArray(VAO);
-  error = glGetError();
-  if (error != GL_NO_ERROR)
-    throw std::runtime_error("OpenGL error: " + std::to_string(error));
-
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-  error = glGetError();
-  if (error != GL_NO_ERROR)
-    throw std::runtime_error("OpenGL error: " + std::to_string(error));
 }
 
 void Mesh::Render(glm::mat4 transform, Shader *shader, Camera *camera, LightData *lightData, unsigned int shadowTex) {

@@ -11,6 +11,6 @@ struct SceneModel {
   glm::vec3 scale;
   std::string diffuse;
   std::string specular;
-  // add rotation prob
+  bool castShadow;
 };
 #endif

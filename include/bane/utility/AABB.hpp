@@ -3,12 +3,15 @@
 
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
+#include <string>
 class Camera;
 class Shader;
 class Bobject;
 class AABB {
 public:
-  AABB(glm::vec3 origin, float xdim, float ydim, float zdim, Bobject *owner);
+  AABB(glm::vec3 origin, float xdim, float ydim, float zdim, Bobject *owner, std::string name, int id);
+  std::string name;
+  int id;
   glm::vec3 origin;
   float xdim;
   float ydim;
