@@ -151,7 +151,7 @@ void Poll() {
 }
 
 void ClearColour() {
-  glClearColor(0.02f, 0.02f, 0.02f, 1.f);
+  glClearColor(0.00f, 0.00f, 0.00f, 1.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
   glStencilMask(0x00);
@@ -165,7 +165,7 @@ void SwapBuffer(SDL_Window *w) {
 glm::mat4 RenderShadow(SDL_Window *window, int width, int height, glm::vec3 lightPos, Shader *shader, Camera *camera) {
   // setup orth projection
   float near_plane = -100.f, far_plane = 100.f;
-  glm::mat4 lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
+  glm::mat4 lightProjection = glm::ortho(-30.f, 30.f, -30.f, 30.f, near_plane, far_plane);
   glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
   glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 

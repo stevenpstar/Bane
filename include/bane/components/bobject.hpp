@@ -13,6 +13,7 @@ public:
   int id;
   unsigned int textureId;
   std::string name;
+  std::string fileName;
   AABB editorCollision;
   Transform transform;
   bool castShadow = false;

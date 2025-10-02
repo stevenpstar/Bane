@@ -25,7 +25,7 @@ glm::mat4 Camera::lookAtTarget(glm::vec3 target) {
   return cameraTransform;
 }
 
-glm::mat4 Camera::getTransform() { return cameraTransform; }
+glm::mat4 Camera::getTransform() const { return cameraTransform; }
 
 void Camera::setPosition(glm::vec3 position) {
   cameraPos = position;
@@ -39,15 +39,17 @@ void Camera::setCameraDirection(glm::vec3 dir) {
 }
 
 void Camera::setProjection(int width, int height, float fov) {
-  projection = glm::perspective(glm::radians(fov), (float)width / (float)height, 0.1f, 100.f);
+  projection = glm::perspective(glm::radians(fov), (float)width / (float)height, drawStart, drawEnd);
   //    float aspect = (float)width/height;
   //    projection = glm::ortho(-aspect, aspect, -1.f, 1.f, 0.1f, 400.f);
 }
 
-glm::vec3 Camera::getPosition() { return cameraPos; }
+void Camera::setDrawDistance(float dist) { drawEnd = dist; }
 
-glm::vec3 Camera::getDirection() { return cameraDirection; }
+glm::vec3 Camera::getPosition() const { return cameraPos; }
 
-glm::vec3 Camera::getCameraUp() { return cameraUp; }
+glm::vec3 Camera::getDirection() const { return cameraDirection; }
 
-glm::vec3 Camera::getCameraRight() { return cameraRight; }
+glm::vec3 Camera::getCameraUp() const { return cameraUp; }
+
+glm::vec3 Camera::getCameraRight() const { return cameraRight; }
