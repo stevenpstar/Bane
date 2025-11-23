@@ -74,16 +74,19 @@ void CaptureMouse(SDL_Window *window) {
 }
 
 SDL_Window *CreateWindow() {
+  std::cout << "Creating window!\n";
   screenWidth = 1920;
   screenHeight = 1080;
   bool success = true;
   // trying to init SDL
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == false) {
+    std::cout << "SDL not init!" << std::endl;
     SDL_Log("SDL could not be initialised! SDL Error: %s\n", SDL_GetError());
     success = false;
   }
 
   if (TTF_Init() == false) {
+    std::cout << "TTF not init!" << std::endl;
     SDL_Log("SDL TTF could not be initialised! SDL Error: %s\n", SDL_GetError());
     success = false;
   } else {
@@ -99,23 +102,29 @@ SDL_Window *CreateWindow() {
     std::cout << "Loading window!\n";
     if (window = SDL_CreateWindow("Bane Engine", screenWidth, screenHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
         window == nullptr) {
+
+      std::cout << "Window not created!" << std::endl;
       SDL_Log("Window could not be created, SDL Error: %s\n", SDL_GetError());
       success = false;
     }
   }
 
   if (success) {
+    std::cout << "Creating context" << std::endl;
     context = SDL_GL_CreateContext(window);
     if (context == nullptr) {
+      std::cout << "OpenGL context not created!\n" << std::endl;
       SDL_Log("Context null: %s", SDL_GetError());
       DestroyBane();
+    } else {
+      std::cout << "GL Context created here." << std::endl;
     }
   }
 
   SDL_GL_MakeCurrent(window, context);
 
   if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
-    std::cout << " Failed to load glad\n";
+    std::cout << " Failed to load glad" << std::endl;
     throw std::runtime_error("Failed to initialise Glad!");
   }
   SDL_SetWindowResizable(window, true);
@@ -151,7 +160,7 @@ void Poll() {
 }
 
 void ClearColour() {
-  glClearColor(0.00f, 0.00f, 0.00f, 1.f);
+  glClearColor(0.0f, 0.0f, 0.0f, 1.f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
   glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
   glStencilMask(0x00);
@@ -164,8 +173,8 @@ void SwapBuffer(SDL_Window *w) {
 
 glm::mat4 RenderShadow(SDL_Window *window, int width, int height, glm::vec3 lightPos, Shader *shader, Camera *camera) {
   // setup orth projection
-  float near_plane = -100.f, far_plane = 100.f;
-  glm::mat4 lightProjection = glm::ortho(-30.f, 30.f, -30.f, 30.f, near_plane, far_plane);
+  float near_plane = -10.f, far_plane = 20.f;
+  glm::mat4 lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
   glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
   glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
@@ -203,7 +212,9 @@ void SetupShadowBuffer(SDL_Window *window, int width, int height) {
 
 void SetupFrameBuffer(SDL_Window *window, int width, int height) {
   // frame buffer testing
+  std::cout << "Setup frame buffer" << std::endl;
   glGenFramebuffers(1, &fbo);
+  std::cout << "Do we even get here?" << std::endl;
   glGenRenderbuffers(1, &rbo);
   glGenTextures(1, &fboTex);
 
@@ -222,6 +233,7 @@ void SetupFrameBuffer(SDL_Window *window, int width, int height) {
   glEnableVertexAttribArray(1);
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
 
+  std::cout << "binding to frame buffer\n";
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
   // bind fboTex
@@ -235,6 +247,7 @@ void SetupFrameBuffer(SDL_Window *window, int width, int height) {
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTex, 0);
 
   // render buffer object, maybe need to do this for the texture to be correctly loaded (depth etc)
+  std::cout << "binding texture /buffer object\n";
   glBindRenderbuffer(GL_RENDERBUFFER, rbo);
   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);

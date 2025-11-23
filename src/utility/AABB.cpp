@@ -7,6 +7,7 @@
 #include <glm/fwd.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <string>
+#include <vector>
 
 AABB::AABB(glm::vec3 origin, float xdim, float ydim, float zdim, Bobject *owner, std::string name, int id) {
   this->origin = origin;

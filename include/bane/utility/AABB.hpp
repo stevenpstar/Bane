@@ -4,6 +4,7 @@
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <string>
+#include <vector>
 class Camera;
 class Shader;
 class Bobject;
@@ -19,6 +20,8 @@ public:
   unsigned int VAO;
   unsigned int VBO;
   Bobject *owner;
+  int ownerId = -1;
+  std::vector<std::string> tags;
   void setupAABB();
   void render(Camera *camera, Shader *shader);
   bool isColliding(AABB *aabb);

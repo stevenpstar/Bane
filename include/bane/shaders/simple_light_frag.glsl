@@ -32,6 +32,8 @@ uniform vec3 lightPos;
 uniform float ambientStrength;
 uniform vec3 viewPos;
 uniform vec3 objectColour;
+uniform vec3 sunColour;
+uniform float sunIntensity;
 uniform bool lightRim;
 uniform bool reflective;
 #define NR_POINT_LIGHTS 2
@@ -49,10 +51,18 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
     vec3 normal = normalize(fs_in.Normal);
-    vec3 lightDir = normalize(fs_in.FragPos - lightPos);
-    //float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-    float bias = 0.001;
-    float shadow = currentDepth - bias > closestDepth  ? 1.0 : ambientStrength;
+    vec3 lightDir = normalize(lightPos - fs_in.FragPos);
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    float shadow = 0.0;
+    vec2 texelSize = 2.0 / textureSize(shadowMap, 0);
+    for (int x = -1; x <= 1; ++x) {
+      for (int y = -1; y <= 1; ++y) {
+        float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+        shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+      }
+    }
+    shadow /= 10.0;
+    //float shadow = currentDepth - bias > closestDepth  ? 1.0 : ambientStrength;
  //   float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
 
     if(projCoords.z > 1.0)
@@ -98,9 +108,8 @@ void main()
     vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb * objectColour;
     vec3 normal = normalize(fs_in.Normal);
     vec3 viewNorm = normalize(fs_in.viewNormal);
-    vec3 lightColor = vec3(1.0);
     // ambient
-    vec3 ambient = ambientStrength * lightColor;
+    vec3 ambient = ambientStrength * sunColour * (sunIntensity);
     // diffuse
     vec3 alightPos = vec3(lightPos.xyz);
 //    alightPos.x *= 1000.0;
@@ -108,14 +117,14 @@ void main()
 //    alightPos.z *= 1000.0;
     vec3 lightDir = normalize(alightPos - fs_in.FragPos);
     float diff = max(dot(lightDir, normal), 0.0);
-    vec3 diffuse = diff * lightColor;
+    vec3 diffuse = diff * sunColour * (sunIntensity);
     // specular
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = 0.0;
     vec3 halfwayDir = normalize(lightDir + viewDir);  
     spec = pow(max(dot(normal, halfwayDir), 0.0), 1.0);
-    vec3 specular = spec * lightColor;    
+    vec3 specular = spec * sunColour * (sunIntensity);    
     // calculate shadow
     float shadow = ShadowCalculation(fs_in.FragPosLightSpace);   
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
@@ -151,7 +160,7 @@ void main()
     } else {
       reflectionAmount = 0.0;
     }
-    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
+    vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color * sunIntensity;
     FragColor = mix(vec4(lighting, 1.0), reflectiveColour, reflectionAmount);
 }
 )";

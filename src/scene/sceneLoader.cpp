@@ -6,6 +6,8 @@
 #include <fstream>
 #include <iostream>
 #include <json.hpp>
+#include <string>
+#include <vector>
 using json = nlohmann::json;
 
 Scene loadScene(std::string scenePath) {
@@ -190,6 +192,8 @@ Scene loadScene(std::string scenePath) {
       float zdim = 1.f;
       std::string name = "";
       int id = -1;
+      int ownerId = -1;
+      std::vector<std::string> tags;
       if (sceneData["colliders"].at(i).contains("originx"))
         origin.x = sceneData["colliders"].at(i)["originx"];
       if (sceneData["colliders"].at(i).contains("originy"))
@@ -208,7 +212,19 @@ Scene loadScene(std::string scenePath) {
         name = sceneData["colliders"].at(i)["name"];
       if (sceneData["colliders"].at(i).contains("id"))
         id = sceneData["colliders"].at(i)["id"];
+
+      if (sceneData["colliders"].at(i).contains("tags")) {
+        for (int j = 0; j < sceneData["colliders"].at(i)["tags"].size(); ++j) {
+          tags.push_back(sceneData["colliders"].at(i)["tags"].at(j));
+        }
+      }
+
+      if (sceneData["colliders"].at(i).contains("ownerId")) {
+        ownerId = sceneData["colliders"].at(i)["ownerId"];
+      }
       AABB aabb = AABB(origin, xdim, ydim, zdim, nullptr, name, id);
+      aabb.tags = tags;
+      aabb.ownerId = ownerId;
       loadedScene.colliders.push_back(aabb);
     }
   }

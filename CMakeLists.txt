@@ -4,8 +4,6 @@ project(bane)
 add_library(${PROJECT_NAME} 
   src/bane.cpp
   src/controllers/icontroller.cpp
-  src/controllers/spectatorController.cpp
-  src/controllers/testCharController.cpp
   src/components/camera.cpp
   src/components/bobject.cpp
   src/components/staticmesh.cpp

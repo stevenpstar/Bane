@@ -8,6 +8,7 @@
 #include <string>
 
 Shader::Shader(std::string vertexString, std::string fragmentString, std::string name) {
+  std::cout << "Creating shader!\n";
   const char *vShaderCode = vertexString.c_str();
   const char *fShaderCode = fragmentString.c_str();
 
@@ -16,7 +17,10 @@ Shader::Shader(std::string vertexString, std::string fragmentString, std::string
   char infoLog[512];
   this->name = name;
 
+  std::cout << "Variables set up\n";
   vertex = glCreateShader(GL_VERTEX_SHADER);
+
+  std::cout << "Did we create?\n";
   glShaderSource(vertex, 1, &vShaderCode, NULL);
   glCompileShader(vertex);
 
@@ -25,6 +29,8 @@ Shader::Shader(std::string vertexString, std::string fragmentString, std::string
     glGetShaderInfoLog(vertex, 512, NULL, infoLog);
     std::cout << "vertex compilation failure: " << infoLog << std::endl;
   }
+
+  std::cout << "Vertex shader compiled\n";
 
   fragment = glCreateShader(GL_FRAGMENT_SHADER);
   glShaderSource(fragment, 1, &fShaderCode, NULL);
@@ -36,10 +42,14 @@ Shader::Shader(std::string vertexString, std::string fragmentString, std::string
     std::cout << "fragment shader comp failure :" << infoLog << ", file: " << fragmentString << std::endl;
   }
 
+  std::cout << "Fragment shader compiled\n";
+
   ID = glCreateProgram();
   glAttachShader(ID, vertex);
   glAttachShader(ID, fragment);
   glLinkProgram(ID);
+
+  std::cout << "Attached and linked\n";
 
   glGetProgramiv(ID, GL_LINK_STATUS, &success);
   if (!success) {

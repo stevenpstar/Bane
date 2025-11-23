@@ -3,12 +3,13 @@
 #include <bane/components/bobject.hpp>
 #include <bane/components/camera.hpp>
 #include <glm/glm.hpp>
+#include <iostream>
 
 Bobject::Bobject(std::string objName, int id)
     : name(objName), id(id), editorCollision(AABB(glm::vec3(0.f, 0.f, 0.f), 2.f, 2.f, 2.f, this, objName, -1)) {}
-void Bobject::Render(Camera *camera) {}
-void Bobject::Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex) {}
-void Bobject::RenderBasic() {}
+void Bobject::Render(Camera *camera) { std::cout << "Rendering!\n"; }
+void Bobject::Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex) { std::cout << "Rendering!\n"; }
+void Bobject::RenderBasic() { std::cout << "RenderingBasic!\n"; }
 void Bobject::Update(float dt) { editorCollision.origin = transform.position; }
 void Bobject::setPosition(glm::vec3 position) {
   transform.position = position;

@@ -4,16 +4,13 @@
 #include <bane/primitives/animatedModel.hpp>
 #include <bane/utility/AABB.hpp>
 class Shader;
-class Character : Bobject {
+class Character {
 private:
 public:
   Shader *shader;
   Character(const char *modelPath, Shader *shader);
-  AnimatedModel model;
-  AABB collisionBox;
-  virtual void Render(Camera *camera) override;
+  virtual void Render(Camera *camera);
   virtual void Update(float deltaTime);
-  AnimatedModel *getModel();
   bool alive = true;
   float randomColour = 0.7f;
   float pathTimer = 100.f;
