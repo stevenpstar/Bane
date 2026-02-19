@@ -75,15 +75,15 @@ int GetCollider(const Resources &resources, std::string colliderName) {
   return -1;
 }
 
-// int GetAnimatedModel(const Resources &resources, std::string modelName) {
-//   if (resources.Models.size() == 0)
-//     return -1;
-//
-//   for (int i = 0; i < resources.AnimatedModel.size(); ++i) {
-//     if (resources.AnimatedModel.at(i)->name == modelName) {
-//       return i;
-//     }
-//   }
-//
-//   return -1;
-// }
+int GetAnimatedModel(const Resources &resources, std::string modelName) {
+  if (resources.Models.size() == 0)
+    return -1;
+
+  for (int i = 0; i < resources.AnimatedModel.size(); ++i) {
+    if (resources.AnimatedModel.at(i)->name == modelName) {
+      return i;
+    }
+  }
+
+  return -1;
+}

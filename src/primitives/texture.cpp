@@ -23,6 +23,8 @@ unsigned int createTexture(const char *path) {
   GLenum format;
   GLenum format2;
   if (data) {
+    std::cout << "name: " << path << "\n";
+    std::cout << "channels: " << nrChannels << "\n";
     if (nrChannels == 1) {
       format = GL_RED;
       format2 = GL_RED;

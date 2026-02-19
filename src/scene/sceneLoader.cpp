@@ -34,9 +34,11 @@ Scene loadScene(std::string scenePath) {
     loadedScene.lightDirection.z = sceneData["lightDirection_z"];
   if (sceneData.contains("ambientStrength"))
     loadedScene.ambientStrength = sceneData["ambientStrength"];
+  if (sceneData.contains("sunlightIntensity"))
+    loadedScene.sunlightIntensity = sceneData["sunlightIntensity"];
 
   //  std::cout << "Found name!\n";
-  for (int i = 0; i < sceneData["bobjects"].size(); ++i) {
+  for (unsigned int i = 0; i < sceneData["bobjects"].size(); ++i) {
     // std::cout << "Loading model data\n";
     SceneModel sceneModel;
     sceneModel.id = sceneData["bobjects"].at(i)["id"];
@@ -69,6 +71,35 @@ Scene loadScene(std::string scenePath) {
       sceneModel.diffuse = sceneData["bobjects"].at(i)["diffuse"];
     } else {
       std::cout << "Could not load texture\n";
+    }
+
+    if (sceneData["bobjects"].at(i).contains("diffuse2")) {
+      sceneModel.diffuse2 = sceneData["bobjects"].at(i)["diffuse2"];
+    }
+
+    if (sceneData["bobjects"].at(i).contains("diffuseMix")) {
+      sceneModel.diffuseMix = sceneData["bobjects"].at(i)["diffuseMix"];
+    }
+
+    if (sceneData["bobjects"].at(i).contains("specular")) {
+      sceneModel.specular = sceneData["bobjects"].at(i)["specular"];
+      sceneModel.hasSpecularMap = true;
+    } else {
+      sceneModel.hasSpecularMap = false;
+    }
+
+    if (sceneData["bobjects"].at(i).contains("heightMap")) {
+      sceneModel.heightMap = sceneData["bobjects"].at(i)["heightMap"];
+      sceneModel.hasHeightMap = true;
+    } else {
+      sceneModel.hasHeightMap = false;
+    }
+
+    if (sceneData["bobjects"].at(i).contains("heightMap2")) {
+      sceneModel.heightMap2 = sceneData["bobjects"].at(i)["heightMap2"];
+      sceneModel.hasHeightMap2 = true;
+    } else {
+      sceneModel.hasHeightMap2 = false;
     }
 
     if (sceneData["bobjects"].at(i).contains("castShadow")) {

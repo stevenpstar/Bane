@@ -3,6 +3,7 @@
 
 #include <glm/fwd.hpp>
 #include <glm/glm.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 class Camera;
@@ -24,16 +25,16 @@ public:
   std::vector<std::string> tags;
   void setupAABB();
   void render(Camera *camera, Shader *shader);
-  bool isColliding(AABB *aabb);
+  bool isColliding(std::unique_ptr<AABB> &aabb);
 };
 
-float AABB_getMinX(AABB *aabb);
-float AABB_getMaxX(AABB *aabb);
+float AABB_getMinX(std::unique_ptr<AABB> &aabb);
+float AABB_getMaxX(std::unique_ptr<AABB> &aabb);
 
-float AABB_getMinY(AABB *aabb);
-float AABB_getMaxY(AABB *aabb);
+float AABB_getMinY(std::unique_ptr<AABB> &aabb);
+float AABB_getMaxY(std::unique_ptr<AABB> &aabb);
 
-float AABB_getMinZ(AABB *aabb);
-float AABB_getMaxZ(AABB *aabb);
+float AABB_getMinZ(std::unique_ptr<AABB> &aabb);
+float AABB_getMaxZ(std::unique_ptr<AABB> &aabb);
 
 #endif

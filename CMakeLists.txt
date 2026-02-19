@@ -40,12 +40,9 @@ target_link_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
-  glfw3
-  assimp-vc143-mt
-  freetype
+  assimp-vc143-mtd
   SDL3
   SDL3_ttf
   SDL3_image
-  SDL3_mixer
 )
 

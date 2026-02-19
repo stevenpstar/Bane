@@ -25,7 +25,7 @@ Model::Model(const char *path) {
 
 void Model::loadModel(std::string path) {
   Assimp::Importer importer;
-  const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+  const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     std::cout << "Error importing model: " << importer.GetErrorString() << std::endl;
@@ -75,6 +75,11 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene) {
     } else {
       vertex.TexCoords = glm::vec2(0.f, 0.f);
     }
+
+    //    vector.x = mesh->mTangents[i].x;
+    //    vector.y = mesh->mTangents[i].y;
+    //    vector.z = mesh->mTangents[i].z;
+    //    vertex.Tangent = vector;
 
     vertices.push_back(vertex);
   }
@@ -172,10 +177,10 @@ void Model::Render(Shader *shader, Camera *camera) {
   }
 }
 
-void Model::Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex) {
+void Model::Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex, unsigned int normalTex) {
   LightData lData;
   for (unsigned int i = 0; i < meshes.size(); i++) {
-    meshes[i].Render(transform, shader, camera, &lData, shadowTex);
+    meshes[i].Render(transform, shader, camera, &lData, shadowTex, normalTex);
   }
 }
 

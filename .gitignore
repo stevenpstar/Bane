@@ -8,4 +8,10 @@ include/KHR/
 include/assimp/
 include/freetype/
 include/SDL3/
+include/nlohmann/
+include/stbimage/
+include/json.hpp
+build/
+src/stb_image.c
+stb_image.h
 

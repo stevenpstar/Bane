@@ -18,5 +18,6 @@ struct Scene {
   std::vector<PointLight> pointLights;
   glm::vec3 lightDirection;
   float ambientStrength;
+  float sunlightIntensity;
 };
 #endif

@@ -9,8 +9,8 @@ StaticMesh::StaticMesh(const char *modelPath, std::string objName, int id) : mod
 
 void StaticMesh::Render(Camera *camera) { model.RenderBasic(); }
 
-void StaticMesh::Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex) {
-  model.Render(transform, shader, camera, shadowTex);
+void StaticMesh::Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex, unsigned int normalTex) {
+  model.Render(transform, shader, camera, shadowTex, normalTex);
 }
 
 void StaticMesh::RenderBasic() { model.RenderBasic(); }

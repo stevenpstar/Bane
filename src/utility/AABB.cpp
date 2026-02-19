@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <glm/fwd.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -67,13 +68,13 @@ void AABB::render(Camera *camera, Shader *shader) {
   glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-bool AABB::isColliding(AABB *aabb) {
-  float xmin = AABB_getMinX(this);
-  float xmax = AABB_getMaxX(this);
-  float ymin = AABB_getMinY(this);
-  float ymax = AABB_getMaxY(this);
-  float zmin = AABB_getMinZ(this);
-  float zmax = AABB_getMaxZ(this);
+bool AABB::isColliding(std::unique_ptr<AABB> &aabb) {
+  float xmin = this->origin.x - this->xdim / 2.f; // AABB_getMinX(this);
+  float xmax = this->origin.x + this->xdim / 2.f; // AABB_getMaxX(this);
+  float ymin = this->origin.y - this->ydim / 2.f; // AABB_getMinY(this);
+  float ymax = this->origin.y + this->ydim / 2.f; // AABB_getMaxY(this);
+  float zmin = this->origin.z - this->zdim / 2.f; // AABB_getMinZ(this);
+  float zmax = this->origin.z + this->zdim / 2.f; // AABB_getMaxZ(this);
 
   float b_xmin = AABB_getMinX(aabb);
   float b_xmax = AABB_getMaxX(aabb);
@@ -85,17 +86,17 @@ bool AABB::isColliding(AABB *aabb) {
   return xmin <= b_xmax && xmax >= b_xmin && ymin <= b_ymax && ymax >= b_ymin && zmin <= b_zmax && zmax >= b_zmin;
 }
 
-float AABB_getMinX(AABB *aabb) {
+float AABB_getMinX(std::unique_ptr<AABB> &aabb) {
   float minx = aabb->origin.x - aabb->xdim / 2.f;
   return minx;
 }
-float AABB_getMaxX(AABB *aabb) {
+float AABB_getMaxX(std::unique_ptr<AABB> &aabb) {
   float maxx = aabb->origin.x + aabb->xdim / 2.f;
   return maxx;
 }
 
-float AABB_getMinY(AABB *aabb) { return aabb->origin.y - aabb->ydim / 2.f; }
-float AABB_getMaxY(AABB *aabb) { return aabb->origin.y + aabb->ydim / 2.f; }
+float AABB_getMinY(std::unique_ptr<AABB> &aabb) { return aabb->origin.y - aabb->ydim / 2.f; }
+float AABB_getMaxY(std::unique_ptr<AABB> &aabb) { return aabb->origin.y + aabb->ydim / 2.f; }
 
-float AABB_getMinZ(AABB *aabb) { return aabb->origin.z - aabb->zdim / 2.f; }
-float AABB_getMaxZ(AABB *aabb) { return aabb->origin.z + aabb->zdim / 2.f; }
+float AABB_getMinZ(std::unique_ptr<AABB> &aabb) { return aabb->origin.z - aabb->zdim / 2.f; }
+float AABB_getMaxZ(std::unique_ptr<AABB> &aabb) { return aabb->origin.z + aabb->zdim / 2.f; }

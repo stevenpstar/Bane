@@ -6,6 +6,7 @@
 #include "glm/trigonometric.hpp"
 #include <bane/primitives/assimpglmhelpers.hpp>
 #include <glm/fwd.hpp>
+#include <memory>
 #include <string>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <assimp/Importer.hpp>
@@ -43,9 +44,24 @@ AnimatedModel::AnimatedModel(const char *path, glm::vec3 pos) {
   this->loadAnimatedModel(path);
 }
 
+AnimatedModel::AnimatedModel(const char *path, std::string objName, int id) {
+  position = glm::vec3(0.f, 0.f, 0.f);
+  modelTarget = glm::vec3(position.x, position.y, position.z - 3.f);
+  modelDir = glm::normalize(position - modelTarget);
+  modelUp = glm::vec3(0.f, 1.f, 0.f);
+  modelRight = glm::normalize(glm::cross(modelUp, modelDir));
+
+  for (int i = 0; i < 100; ++i) {
+    boneMatrices[i] = glm::mat4(1.f);
+  }
+  this->loadAnimatedModel(path);
+  name = objName;
+  this->id = id;
+}
+
 void AnimatedModel::loadAnimatedModel(std::string path) {
   Assimp::Importer importer;
-  const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+  const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
     std::cout << "Error importing model: " << importer.GetErrorString() << std::endl;
@@ -173,6 +189,7 @@ void AnimatedModel::processBones(std::vector<Vertex> &vertices, aiMesh *mesh, co
       boneMap[bi].ID = bi;
       boneMap[bi].Name = boneName;
       boneMap[bi].Offset = AssimpGLMHelpers::ConvertMatrixToGLMFormat(mesh->mBones[bi]->mOffsetMatrix);
+      std::cout << "bone map name: " << boneMap[bi].Name << "\n";
     }
 
     if (!namedBoneMap.count(boneMap[bi].Name)) {
@@ -203,6 +220,8 @@ void AnimatedModel::processBones(std::vector<Vertex> &vertices, aiMesh *mesh, co
 }
 
 void AnimatedModel::addAnimationData(const aiScene *scene) {
+
+  //  std::cout << "number of animations: " << scene->mNumAnimations << "\n";
   for (int a = 0; a < scene->mNumAnimations; ++a) {
     int animID = a;
     std::string animName = scene->mAnimations[a]->mName.C_Str();
@@ -212,7 +231,7 @@ void AnimatedModel::addAnimationData(const aiScene *scene) {
       animMD.AnimDuration = scene->mAnimations[a]->mDuration;
       animMD.ticksPerSecond = scene->mAnimations[a]->mTicksPerSecond;
       animationMap[animID] = animMD;
-      //      std::cout << "Adding animation: " << animName << ", ID: " << animID << "\n";
+      std::cout << "Adding animation: " << animName << ", ID: " << animID << "\n";
       //      std::cout << "Animation TPS" << animMD.ticksPerSecond << "\n";
       if (animID == 0) {
       }
@@ -337,7 +356,7 @@ void AnimatedModel::Render(glm::vec3 pos, Shader *shader, Camera *camera) {
   // model = model * rot;
   LightData lData;
   for (unsigned int i = 0; i < meshes.size(); i++) {
-    meshes[i].Render(model, shader, camera, &lData, 0);
+    // meshes[i].Render(model, shader, camera, &lData, 0);
   }
 }
 
@@ -351,7 +370,7 @@ void AnimatedModel::Render(glm::mat4 transform, Shader *shader, Camera *camera, 
 
   LightData lData;
   for (unsigned int i = 0; i < meshes.size(); i++) {
-    meshes[i].Render(transform, shader, camera, &lData, shadowTex);
+    //  meshes[i].Render(transform, shader, camera, &lData, shadowTex);
   }
 }
 
@@ -402,7 +421,11 @@ void AnimatedModel::calcAnimTransform(Bone *bone, glm::mat4 transform) {
     if (bone->Name == boneRot.BoneName) {
       glm::mat4 addRot = glm::mat4(1.f);
       addRot = glm::rotate(addRot, glm::radians(boneRot.Angle), boneRot.Axis);
-      rotation *= addRot;
+      if (boneRot.Global) {
+        rotation *= addRot;
+      } else {
+        rotation *= addRot;
+      }
     }
   }
   glm::mat4 interpedTransform = translation * rotation * scale;
@@ -418,8 +441,9 @@ void AnimatedModel::calcAnimTransform(Bone *bone, glm::mat4 transform) {
   }
 }
 
-void AnimatedModel::SetBoneMatricesUnif(Shader *shader) {
+void AnimatedModel::SetBoneMatricesUnif(std::unique_ptr<Shader> &shader) {
   for (int index = 0; index < boneMatrices.size(); ++index) {
+    // std::cout << "Setting bone matrices uniform i : " << index << " to: " << glm::to_string(boneMatrices[index]) << "\n";
     shader->setMat4("finalBonesMatrices[" + std::to_string(index) + "]", boneMatrices[index], 1);
   }
 }

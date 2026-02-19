@@ -9,6 +9,7 @@ in VS_OUT {
     vec4 FragPosLightSpace;
     vec3 viewFragPos;
     vec3 viewNormal;
+    vec3 Tangent;
 } fs_in;
 
 struct PointLight {
@@ -25,7 +26,12 @@ struct PointLight {
 };
 
 uniform sampler2D diffuseTexture;
+uniform sampler2D diffuseTexture2;
+uniform sampler2D specularMap;
+uniform sampler2D normalMap;
 uniform sampler2D shadowMap;
+uniform sampler2D heightMap2;
+uniform bool hasHeightMap2;
 uniform samplerCube reflectionMap;
 
 uniform vec3 lightPos;
@@ -34,22 +40,20 @@ uniform vec3 viewPos;
 uniform vec3 objectColour;
 uniform vec3 sunColour;
 uniform float sunIntensity;
+uniform float diffuseMix;
 uniform bool lightRim;
 uniform bool reflective;
+uniform bool hasNormalMap;
+uniform bool hasSpecularMap;
 #define NR_POINT_LIGHTS 2
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
-    // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
     float closestDepth = texture(shadowMap, projCoords.xy).r; 
-    // get depth of current fragment from light's perspective
     float currentDepth = projCoords.z;
-    // check whether current frag pos is in shadow
     vec3 normal = normalize(fs_in.Normal);
     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
     float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
@@ -84,7 +88,12 @@ vec3 CalculatePointLight(PointLight light, vec3 norm, vec3 FragPos, vec3 viewDir
 
   //vec3 ambient = light.ambient * vec3(texture(diffuseTexture, fs_in.TexCoords));
   vec3 diffuse = diff * light.diffuse * vec3(texture(diffuseTexture, fs_in.TexCoords));
-  //vec3 specular = spec * light.specular * vec3(texture(specularTexture, fs_in.TexCoords));
+
+  vec3 specular = vec3(0.0, 0.0, 0.0);
+  if (hasSpecularMap) {
+//    specular = diff * 100 * vec3(texture(specularMap, fs_in.TexCoords));
+    specular = diff * texture(specularMap, fs_in.TexCoords).rgb;
+  }
 
  // if (distance <= 10.0) {
     //diffuse = vec3(1.0, 0.0, 0.0);
@@ -96,17 +105,28 @@ vec3 CalculatePointLight(PointLight light, vec3 norm, vec3 FragPos, vec3 viewDir
 
  // ambient *= attenuation;
   diffuse *= attenuation;
-  //specular *= attenuation;
+  specular *= attenuation;
 
   //return (ambient + diffuse + specular);
-  return diffuse * intensity;
+  return (diffuse + specular) * intensity;
 }
 
 void main()
-{           
+{       
+    float finalDiffuseMix = diffuseMix;
     float reflectionAmount = 0.1;
-    vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb * objectColour;
+    if (hasHeightMap2) {
+      finalDiffuseMix = texture(heightMap2, fs_in.TexCoords).r;
+    }
+    vec3 color = mix(texture(diffuseTexture, fs_in.TexCoords).rgb, 
+    texture(diffuseTexture2, fs_in.TexCoords).rgb, finalDiffuseMix) * objectColour;
+  //  vec3 normal = texture(normalMap, fs_in.TexCoords).rgb;
+  //  normal = normalize(normal * 2.0 - 1.0);
     vec3 normal = normalize(fs_in.Normal);
+    if (hasNormalMap) {
+      normal = texture(normalMap, fs_in.TexCoords).rgb;
+      normal = normalize(normal * 2.0 - 1.0);
+    }
     vec3 viewNorm = normalize(fs_in.viewNormal);
     // ambient
     vec3 ambient = ambientStrength * sunColour * (sunIntensity);
@@ -122,9 +142,16 @@ void main()
     vec3 viewDir = normalize(viewPos - fs_in.FragPos);
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = 0.0;
+    if (hasSpecularMap) {
+      spec = 1.0;
+    }
     vec3 halfwayDir = normalize(lightDir + viewDir);  
     spec = pow(max(dot(normal, halfwayDir), 0.0), 1.0);
     vec3 specular = spec * sunColour * (sunIntensity);    
+    if (hasSpecularMap) {
+      //specular = diff * texture(specularMap, fs_in.TexCoords).rgb * sunColour * (sunIntensity);    
+      specular = diff * texture(specularMap, fs_in.TexCoords).rgb;
+    }
     // calculate shadow
     float shadow = ShadowCalculation(fs_in.FragPosLightSpace);   
     for (int i = 0; i < NR_POINT_LIGHTS; i++)
@@ -138,8 +165,8 @@ void main()
     if (lightRim) {
       vec3 eye = normalize(-fs_in.viewFragPos.xyz);
       vec3 n = normalize(fs_in.Normal);
-      vec3 coltest = vec3(0.56, 0.83, 1.0);
-      float rimIntensity = 0.2;
+      vec3 coltest = vec3(1.0, 0.0, 0.0);
+      float rimIntensity = 0.02;
       float rim = 1.0 - max(dot(viewDir, n), 0.0);
       rim = smoothstep(0.6, 1.0, rim);
       rim *= rimIntensity;

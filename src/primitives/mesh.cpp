@@ -41,6 +41,12 @@ void Mesh::setupMesh() {
     return;
   }
 
+  //  for (const auto &vert : vertices) {
+  //    for (const auto &boneId : vert.Weights) {
+  //      std::cout << "bone id: " << boneId << "\n";
+  //    }
+  //  }
+
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
@@ -54,12 +60,16 @@ void Mesh::setupMesh() {
   glVertexAttribIPointer(3, 4, GL_INT, sizeof(Vertex), (void *)offsetof(Vertex, BoneIds));
   glEnableVertexAttribArray(4);
   glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, Weights));
+  // glEnableVertexAttribArray(5);
+  // glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, Tangent));
 }
 
 void Mesh::Render(glm::vec3 pos, glm::vec3 rotation, Shader *shader, Camera *camera) {
+  std::cout << "Am I ever actually calling this?\n";
   shader->use();
   unsigned int diffuseNr = 1;
   unsigned int specularNr = 1;
+  unsigned int normalNr = 1;
   for (unsigned int i = 0; i < textures.size(); i++) {
     glActiveTexture(GL_TEXTURE0 + i);
     std::string number;
@@ -67,9 +77,12 @@ void Mesh::Render(glm::vec3 pos, glm::vec3 rotation, Shader *shader, Camera *cam
 
     if (name == "texture_diffuse") {
       number = std::to_string(diffuseNr++);
-    } else if (name == "texture_specular") {
-      number = std::to_string(specularNr++);
     }
+    // else if (name == "texture_specular") {
+    //   number = std::to_string(specularNr++);
+    // } else if (name == "texture_normal") {
+    //   number = std::to_string(normalNr++);
+    // }
 
     shader->setInt(("material." + name + number).c_str(), i);
 
@@ -112,7 +125,8 @@ void Mesh::RenderBasic() {
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }
 
-void Mesh::Render(glm::mat4 transform, Shader *shader, Camera *camera, LightData *lightData, unsigned int shadowTex) {
+void Mesh::Render(glm::mat4 transform, Shader *shader, Camera *camera, LightData *lightData, unsigned int shadowTex,
+                  unsigned int normalTex) {
   shader->use();
 
   unsigned int diffuseNr = 1;
@@ -141,6 +155,7 @@ void Mesh::Render(glm::mat4 transform, Shader *shader, Camera *camera, LightData
   shader->setVec3("objectColour", glm::vec3(1.f, 1.f, 1.f));
   shader->setVec3("lightPos", glm::vec3(-2.f, 4.f, -4.f));
   shader->setFloat("ambientStrength", 0.2);
+  //  shader->setInt("normalMap", 2);
   shader->setInt("shadowMap", 1);
   shader->setInt("diffuseTexture", 0);
 
@@ -164,6 +179,9 @@ void Mesh::Render(glm::mat4 transform, Shader *shader, Camera *camera, LightData
 
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, shadowTex);
+
+  // glActiveTexture(GL_TEXTURE2);
+  // glBindTexture(GL_TEXTURE_2D, normalTex);
 
   auto error = glGetError();
   if (error != GL_NO_ERROR)

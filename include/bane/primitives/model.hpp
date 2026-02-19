@@ -22,7 +22,7 @@ public:
   glm::vec3 tint;
   std::string name;
   void Render(Shader *shader, Camera *camera);
-  void Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex);
+  void Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex, unsigned int normalTex);
   void RenderBasic();
   void SetPosition(glm::vec3 pos);
   std::vector<Mesh> meshes;

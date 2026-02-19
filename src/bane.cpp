@@ -35,6 +35,9 @@ unsigned int shadowVAO, shadowVBO;
 unsigned int shadowDepthMapFBO;
 unsigned int depthMap;
 
+// gbuffer testing/work for deferred rendering and SSAO etc.
+unsigned int gBuffer, gBufferRbo;
+
 int screenWidth, screenHeight;
 
 // text rendering testing
@@ -79,7 +82,7 @@ SDL_Window *CreateWindow() {
   screenHeight = 1080;
   bool success = true;
   // trying to init SDL
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == false) {
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD) == false) {
     std::cout << "SDL not init!" << std::endl;
     SDL_Log("SDL could not be initialised! SDL Error: %s\n", SDL_GetError());
     success = false;
@@ -94,7 +97,7 @@ SDL_Window *CreateWindow() {
   }
 
   SDL_GL_LoadLibrary(nullptr);
-  SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 
@@ -173,9 +176,29 @@ void SwapBuffer(SDL_Window *w) {
 
 glm::mat4 RenderShadow(SDL_Window *window, int width, int height, glm::vec3 lightPos, Shader *shader, Camera *camera) {
   // setup orth projection
-  float near_plane = -10.f, far_plane = 20.f;
+  float near_plane = -10.f, far_plane = 10.f;
   glm::mat4 lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
   glm::mat4 lightView = glm::lookAt(lightPos, glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
+  glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+  glEnable(GL_DEPTH_TEST);
+  glCullFace(GL_FRONT);
+  shader->use();
+  shader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
+  glViewport(0, 0, width, height);
+  glBindFramebuffer(GL_FRAMEBUFFER, shadowDepthMapFBO);
+  glClear(GL_DEPTH_BUFFER_BIT);
+
+  return lightSpaceMatrix;
+  // Render scene needs to be called in application/game
+}
+
+glm::mat4 RenderShadow(SDL_Window *window, int width, int height, glm::vec3 lightPos, glm::vec3 lookAtPos, Shader *shader,
+                       Camera *camera) {
+  // setup orth projection
+  float near_plane = -10.f, far_plane = 40.f;
+  glm::mat4 lightProjection = glm::ortho(-40.f, 40.f, -40.f, 40.f, near_plane, far_plane);
+  glm::mat4 lightView = glm::lookAt(lightPos, lookAtPos, glm::vec3(0.f, 1.f, 0.f));
   glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
   glEnable(GL_DEPTH_TEST);
@@ -247,7 +270,6 @@ void SetupFrameBuffer(SDL_Window *window, int width, int height) {
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fboTex, 0);
 
   // render buffer object, maybe need to do this for the texture to be correctly loaded (depth etc)
-  std::cout << "binding texture /buffer object\n";
   glBindRenderbuffer(GL_RENDERBUFFER, rbo);
   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
@@ -388,4 +410,42 @@ void SetCursorImage(const char *path) {
   SDL_Surface *surface = IMG_Load(path);
   cursor = SDL_CreateColorCursor(surface, 8, 8);
   SDL_SetCursor(cursor);
+}
+
+void SetupGBuffer(SDL_Window *window, int width, int height) {
+  glGenFramebuffers(1, &gBuffer);
+  glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+  unsigned int gPosition, gNormal, gAlbedoSpec;
+
+  glGenTextures(1, &gPosition);
+  glBindTexture(GL_TEXTURE_2D, gPosition);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+
+  glGenTextures(1, &gNormal);
+  glBindTexture(GL_TEXTURE_2D, gNormal);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+
+  glGenTextures(1, &gAlbedoSpec);
+  glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
+
+  unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+  glDrawBuffers(3, attachments);
+
+  glBindRenderbuffer(GL_RENDERBUFFER, gBufferRbo);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, gBufferRbo);
+  auto fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+  if (fboStatus != GL_FRAMEBUFFER_COMPLETE) {
+    std::cout << "Fbuffer not complete: " << fboStatus << "\n";
+  }
 }

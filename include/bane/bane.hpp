@@ -1,6 +1,7 @@
 #ifndef BANE_ENGINE
 #define BANE_ENGINE
 #include "SDL3/SDL_ttf.h"
+#include "glm/fwd.hpp"
 #include <bane/utility/shader.hpp>
 #include <glm/glm.hpp>
 #include <string>
@@ -21,7 +22,10 @@ void ResizeViewport(int width, int height);
 void CaptureMouse(SDL_Window *window);
 void RenderColouredTriangle(Shader *shader, std::array<float, 18> &triangle);
 void SetupShadowBuffer(SDL_Window *window, int width, int height);
+void SetupGBuffer(SDL_Window *window, int width, int height);
 glm::mat4 RenderShadow(SDL_Window *window, int width, int height, glm::vec3 lightPos, Shader *shader, Camera *camera);
+glm::mat4 RenderShadow(SDL_Window *window, int width, int height, glm::vec3 lightPos, glm::vec3 lookAtPos, Shader *shader,
+                       Camera *camera);
 unsigned int getShadowTexture();
 void SetupFrameBuffer(SDL_Window *window, int width, int height);
 void UpdateFrameBufferSize(int width, int height);

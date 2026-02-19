@@ -3,6 +3,7 @@
 #include <bane/components/bobject.hpp>
 #include <bane/components/camera.hpp>
 #include <bane/components/lightdata.hpp>
+#include <bane/primitives/animatedModel.hpp>
 #include <bane/primitives/texture.hpp>
 #include <glm/fwd.hpp>
 #include <memory>
@@ -22,7 +23,7 @@ struct Resources {
   std::vector<std::unique_ptr<Shader>> Shaders;
   std::vector<std::unique_ptr<AABB>> Colliders;
   std::vector<std::unique_ptr<Bobject>> Models;
-  //  std::vector<std::unique_ptr<AnimatedModel>> AnimatedModel;
+  std::vector<std::unique_ptr<AnimatedModel>> AnimatedModel;
   Resources() : camera(Camera(glm::vec3(0.f, 0.f, 0.f))) {};
 };
 
@@ -31,6 +32,6 @@ std::string GetTextureName(std::unique_ptr<Resources> &resources, unsigned int t
 int GetCollider(Resources &resources, std::string collider);
 int GetShader(const std::unique_ptr<Resources> &resources, std::string shaderName);
 int GetModel(Resources &resources, std::string modelName);
-// int GetAnimatedModel(Resources &resources, std::string textureName);
+int GetAnimatedModel(Resources &resources, std::string textureName);
 
 #endif

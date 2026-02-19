@@ -17,6 +17,7 @@ out VS_OUT {
     vec4 FragPosLightSpace;
     vec3 viewFragPos;
     vec3 viewNormal;
+    vec3 Tangent;
 } vs_out;
 
 

@@ -1,6 +1,7 @@
 #ifndef BANE_ANIMATED_MODEL
 #define BANE_ANIMATED_MODEL
 #include "assimp/mesh.h"
+#include "bane/primitives/transform.hpp"
 #include "bane/utility/boneRotation.hpp"
 #include <array>
 #include <bane/primitives/mesh.hpp>
@@ -8,6 +9,7 @@
 #include <glm/fwd.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 class Shader;
@@ -62,7 +64,21 @@ struct Bone {
 
 class AnimatedModel {
 public:
+  int id;
+  unsigned int textureId;
+  unsigned int specularId;
+  unsigned int normalMapId;
+  unsigned int emissiveMapId;
+  std::string name;
+  std::string fileName;
+  bool castShadow = false;
+  bool hasSpecularMap = false;
+  bool hasNormalMap = false;
+  bool hasEmissiveMap = false;
+  glm::vec3 emissiveColour = glm::vec3(0.f);
   AnimatedModel(const char *path, glm::vec3 pos);
+  AnimatedModel(const char *path, std::string objName, int id);
+  Transform transform;
   glm::vec3 position;
   glm::mat4 rotation = glm::mat4(1.f);
   // TEST VARIABLE
@@ -76,7 +92,6 @@ public:
   glm::vec3 modelTarget;
   //
   //
-  std::string name;
 
   std::vector<BoneRotation> boneRotations;
 
@@ -84,7 +99,7 @@ public:
   void RenderBasic();
   // new will overwrite old kinda
   void Render(glm::mat4 transform, Shader *shader, Camera *cam, unsigned int shadowTex);
-  void SetBoneMatricesUnif(Shader *shader);
+  void SetBoneMatricesUnif(std::unique_ptr<Shader> &shader);
   void ApplyLighting(Shader *shader);
   void calcInverseTransform(Bone *bone, glm::mat4 parentTransform);
   // maybe by name instead but this works for now

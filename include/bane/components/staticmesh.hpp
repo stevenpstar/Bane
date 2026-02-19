@@ -12,7 +12,7 @@ public:
   Model model;
   StaticMesh(const char *modelPath, std::string objName, int id);
   void Render(Camera *camera) override;
-  void Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex) override;
+  void Render(glm::mat4 transform, Shader *shader, Camera *camera, unsigned int shadowTex, unsigned int normalTex) override;
   void RenderBasic() override;
   void Update(float dt) override;
 };
